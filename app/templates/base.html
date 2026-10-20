@@ -91,6 +91,11 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin.my_id_card') }}">
+                                    <i class="bi bi-person-badge me-1"></i> My ID Card
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('admin.reports') }}">
                                     <i class="bi bi-file-earmark-bar-graph me-1"></i> Reports
                                 </a>
@@ -138,6 +143,11 @@
                                     {% if pending_id_cards_badge > 0 %}
                                         <span class="badge bg-warning text-dark rounded-pill ms-1">{{ pending_id_cards_badge }}</span>
                                     {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('librarian.my_id_card') }}">
+                                    <i class="bi bi-person-badge me-1"></i> My ID Card
                                 </a>
                             </li>
                         {% elif current_user.is_student %}
@@ -208,12 +218,14 @@
                                     <li><a class="dropdown-item" href="{{ url_for('student.loans') }}"><i class="bi bi-book me-2"></i>Borrowed Books</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('student.fines') }}"><i class="bi bi-receipt me-2"></i>My Fines</a></li>
                                 {% elif current_user.is_librarian %}
-                                    <li><a class="dropdown-item" href="{{ url_for('librarian.id_cards_list') }}"><i class="bi bi-person-vcard me-2 text-primary"></i>Student ID Cards</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('librarian.my_id_card') }}"><i class="bi bi-person-badge me-2 text-success"></i>My Staff ID Card</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('librarian.id_cards_list') }}"><i class="bi bi-person-vcard me-2 text-primary"></i>ID Cards Management</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('librarian.direct_issue') }}"><i class="bi bi-plus-circle me-2"></i>Issue Book</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('librarian.overdue_list') }}"><i class="bi bi-alarm me-2"></i>Overdue Tracking</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('librarian.fines_list') }}"><i class="bi bi-cash-coin me-2"></i>Fine Records</a></li>
                                 {% elif current_user.is_admin %}
-                                    <li><a class="dropdown-item" href="{{ url_for('admin.id_cards_list') }}"><i class="bi bi-person-vcard me-2 text-primary"></i>Student ID Cards</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.my_id_card') }}"><i class="bi bi-person-badge me-2 text-danger"></i>My Admin ID Card</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.id_cards_list') }}"><i class="bi bi-person-vcard me-2 text-primary"></i>ID Cards Management</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin.users_list') }}"><i class="bi bi-people me-2"></i>User Accounts</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin.categories_list') }}"><i class="bi bi-tags me-2"></i>Categories</a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin.audit_logs') }}"><i class="bi bi-journal-text me-2"></i>Audit Logs</a></li>

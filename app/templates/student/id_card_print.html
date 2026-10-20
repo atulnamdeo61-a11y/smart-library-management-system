@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library ID Card - {{ card.student.full_name }} ({{ card.roll_number }})</title>
+    <title>{{ 'Staff' if card.student.is_staff else 'Student' }} ID Card - {{ card.student.full_name }} ({{ card.roll_number }})</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -82,6 +82,14 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+        }
+
+        .cr80-card-admin {
+            background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 50%, #991b1b 100%) !important;
+        }
+
+        .cr80-card-librarian {
+            background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #0f766e 100%) !important;
         }
 
         .cr80-card-back {
@@ -259,7 +267,7 @@
 <body>
     <div class="no-print-bar">
         <div>
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem;">Official CR80 Student ID Card</h3>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem;">Official CR80 {{ 'Staff & Faculty' if card.student.is_staff else 'Student' }} ID Card</h3>
             <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Standard physical ID card format (85.6mm × 54mm) ready for printing or laminating</p>
         </div>
         <div style="display: flex; gap: 0.75rem;">
@@ -274,11 +282,19 @@
 
     <div class="cards-sheet">
         <!-- FRONT SIDE -->
-        <div class="cr80-card">
+        <div class="cr80-card {% if card.student.role == 'admin' %}cr80-card-admin{% elif card.student.role == 'librarian' %}cr80-card-librarian{% endif %}">
             <div class="card-header">
                 <div>
                     <div class="college-title">SMART COLLEGE LIBRARY</div>
-                    <div class="card-subtitle">STUDENT IDENTITY CARD</div>
+                    <div class="card-subtitle" style="color: {% if card.student.role == 'admin' %}#fca5a5{% elif card.student.role == 'librarian' %}#6ee7b7{% else %}#93c5fd{% endif %};">
+                        {% if card.student.role == 'admin' %}
+                            EXECUTIVE ADMINISTRATOR IDENTITY CARD
+                        {% elif card.student.role == 'librarian' %}
+                            FACULTY & LIBRARIAN IDENTITY CARD
+                        {% else %}
+                            STUDENT IDENTITY CARD
+                        {% endif %}
+                    </div>
                 </div>
                 <div style="font-size: 8pt; color: #fbbf24;">
                     <i class="bi bi-patch-check-fill"></i>
@@ -296,15 +312,15 @@
 
                 <div class="student-info">
                     <div class="student-name">{{ card.student.full_name }}</div>
-                    <div class="student-roll">{{ card.roll_number }}</div>
+                    <div class="student-roll">{% if card.student.is_staff %}STAFF CODE: {{ card.roll_number }}{% else %}{{ card.roll_number }}{% endif %}</div>
 
                     <div class="info-grid">
                         <div>
-                            <div class="field-label">Branch</div>
+                            <div class="field-label">{{ 'Department' if card.student.is_staff else 'Branch' }}</div>
                             <div class="field-val">{{ card.course_branch }}</div>
                         </div>
                         <div>
-                            <div class="field-label">Batch</div>
+                            <div class="field-label">{{ 'Designation' if card.student.is_staff else 'Batch' }}</div>
                             <div class="field-val">{{ card.academic_year }}</div>
                         </div>
                         <div>
@@ -334,18 +350,24 @@
         <!-- BACK SIDE -->
         <div class="cr80-card cr80-card-back">
             <div class="card-header">
-                <span class="back-desk-access">Circulation Counter Access</span>
+                <span class="back-desk-access">{% if card.student.is_staff %}Official Staff Credential & Circulation Desk{% else %}Circulation Counter Access{% endif %}</span>
                 <span style="font-size: 5pt; color: #4ade80; font-weight: 700;">OFFICIAL</span>
             </div>
 
             <div class="back-content">
                 <div class="back-text">
                     <p style="margin-bottom: 1.5mm;"><strong>Emergency:</strong> {{ card.emergency_contact or 'Campus Helpline' }}</p>
-                    <p style="margin-bottom: 1.5mm;"><strong>Address:</strong> {{ card.address or 'Registered Hostel/City Address' }}</p>
+                    <p style="margin-bottom: 1.5mm;"><strong>Address:</strong> {{ card.address or 'Registered Campus/City Residence' }}</p>
                     <p style="color: #94a3b8; font-size: 4.6pt; line-height: 1.2;">
-                        1. Mandatory for all book issues and digital check-ins.<br>
-                        2. Non-transferable. Misuse is subject to disciplinary action.<br>
-                        3. If found, please return to Central Library Desk.
+                        {% if card.student.is_staff %}
+                            1. Official institutional credential for library systems and admin privileges.<br>
+                            2. Grants priority circulation desk authorization and institutional access.<br>
+                            3. Authorized and approved by Central Library Administration.
+                        {% else %}
+                            1. Mandatory for all book issues and digital check-ins.<br>
+                            2. Non-transferable. Misuse is subject to disciplinary action.<br>
+                            3. If found, please return to Central Library Desk.
+                        {% endif %}
                     </p>
                 </div>
 
@@ -360,7 +382,7 @@
 
             <div class="signature-line">
                 <span>Issue: {{ card.issue_date.strftime('%d %b %Y') if card.issue_date else 'N/A' }}</span>
-                <span>Authorized Librarian Signature</span>
+                <span>{{ 'Authorized Central Administration' if card.student.is_staff else 'Authorized Librarian Signature' }}</span>
             </div>
         </div>
     </div>

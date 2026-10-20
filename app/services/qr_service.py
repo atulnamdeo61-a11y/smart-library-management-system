@@ -95,13 +95,23 @@ class QRService:
         filepath = qr_folder / filename
 
         # Scannable payload for circulation desk
-        payload = (
-            f"SMART_LIBRARY_ID:{card.card_number}|"
-            f"STUDENT:{card.student.full_name}|"
-            f"ROLL:{card.roll_number}|"
-            f"COURSE:{card.course_branch}|"
-            f"EXP:{card.expiry_date.strftime('%Y-%m-%d') if card.expiry_date else 'N/A'}"
-        )
+        if card.student and card.student.is_staff:
+            payload = (
+                f"SMART_LIBRARY_STAFF_ID:{card.card_number}|"
+                f"NAME:{card.student.full_name}|"
+                f"ROLE:{card.student.role.upper()}|"
+                f"CODE:{card.roll_number}|"
+                f"DEPT:{card.course_branch}|"
+                f"EXP:{card.expiry_date.strftime('%Y-%m-%d') if card.expiry_date else 'PERMANENT'}"
+            )
+        else:
+            payload = (
+                f"SMART_LIBRARY_ID:{card.card_number}|"
+                f"STUDENT:{card.student.full_name}|"
+                f"ROLL:{card.roll_number}|"
+                f"COURSE:{card.course_branch}|"
+                f"EXP:{card.expiry_date.strftime('%Y-%m-%d') if card.expiry_date else 'N/A'}"
+            )
 
         qr = qrcode.QRCode(
             version=1,

@@ -193,7 +193,7 @@ def test_admin_id_card_management_and_settings(client, seed_test_data):
     # 2. Access Admin ID cards list
     admin_cards_res = client.get('/admin/id-cards')
     assert admin_cards_res.status_code == 200
-    assert b'Student Library ID Cards' in admin_cards_res.data
+    assert b'Library ID Cards Management' in admin_cards_res.data
 
     # 3. Direct issue by Admin
     student2 = seed_test_data['student2']
@@ -257,8 +257,196 @@ def test_authorization_restrictions(client, seed_test_data):
     admin_res = client.get('/admin/id-cards')
     assert admin_res.status_code == 403
 
+    # Ensure an approved card exists before staff print test
+    student1 = seed_test_data['student1']
+    existing_approved = StudentIdCard.query.filter_by(student_id=student1.id, status=StudentIdCard.STATUS_APPROVED).first()
+    if not existing_approved:
+        card = StudentIdCard(
+            student_id=student1.id,
+            roll_number='S001',
+            course_branch='Data Science',
+            academic_year='2024-2028',
+            card_number=StudentIdCard.generate_card_number('S001'),
+            status=StudentIdCard.STATUS_APPROVED
+        )
+        card.approve(staff_user_id=seed_test_data['librarian'].id)
+        db.session.add(card)
+        db.session.commit()
+
     # Staff (Admin and Librarian) can access print view without 403 Forbidden
     login_user(client, 'admin@test.edu', 'AdminPass123')
     staff_print_res = client.get('/student/id-card/print')
     assert staff_print_res.status_code == 200
     assert b'SMART COLLEGE LIBRARY' in staff_print_res.data
+
+
+def test_librarian_request_staff_id_card(client, seed_test_data):
+    """Test librarian requests a staff ID card with waived fee and status queued for Admin approval."""
+    librarian = seed_test_data['librarian']
+    login_user(client, librarian.email, 'LibPass123')
+
+    # View my-id-card application page
+    get_res = client.get('/librarian/my-id-card')
+    assert get_res.status_code == 200
+    assert b'Request Official Librarian ID Card' in get_res.data
+    assert b'Security Governance:' in get_res.data
+
+    # Submit staff application
+    post_res = client.post('/librarian/my-id-card', data={
+        'staff_code': 'LIB-TEST-001',
+        'designation': 'Assistant Librarian',
+        'department': 'Central Library - Cataloging Division',
+        'blood_group': 'B+',
+        'dob': '1990-08-20',
+        'emergency_contact': '9876501234',
+        'address': 'Staff Quarters Q-14, North Campus'
+    }, follow_redirects=True)
+
+    assert post_res.status_code == 200
+    assert b'Staff Library ID Card application submitted! As per library policy, it is queued for Administrator approval.' in post_res.data
+    assert b'Staff ID Card Queued for Admin Approval' in post_res.data
+
+    # Verify database state
+    card = StudentIdCard.query.filter_by(student_id=librarian.id).first()
+    assert card is not None
+    assert card.status == StudentIdCard.STATUS_PENDING
+    assert card.payment_status == 'Waived'
+    assert card.fee_amount == 0.0
+    assert card.roll_number == 'LIB-TEST-001'
+    assert card.academic_year == 'Assistant Librarian'
+    assert card.course_branch == 'Central Library - Cataloging Division'
+
+
+def test_librarian_cannot_approve_staff_id_card(client, seed_test_data):
+    """Test strict governance: Librarian CANNOT approve or reject Staff / Librarian ID cards."""
+    librarian = seed_test_data['librarian']
+
+    # Create a pending staff ID card for librarian
+    staff_card = StudentIdCard(
+        student_id=librarian.id,
+        roll_number='LIB-TEST-002',
+        course_branch='Central Library',
+        academic_year='Senior Librarian',
+        card_number=StudentIdCard.generate_card_number('LIB-TEST-002'),
+        status=StudentIdCard.STATUS_PENDING,
+        payment_status='Waived',
+        payment_method='Staff / Institutional',
+        fee_amount=0.0
+    )
+    db.session.add(staff_card)
+    db.session.commit()
+
+    # Login as Librarian
+    login_user(client, librarian.email, 'LibPass123')
+
+    # Librarian tries to approve staff card
+    approve_res = client.post(f'/librarian/id-cards/{staff_card.id}/approve', data={
+        'validity_years': '3'
+    }, follow_redirects=True)
+
+    assert approve_res.status_code == 200
+    assert b'Access Denied: Staff and Librarian ID cards can ONLY be approved by a System Administrator.' in approve_res.data
+
+    # Card must still be pending
+    db.session.refresh(staff_card)
+    assert staff_card.status == StudentIdCard.STATUS_PENDING
+    assert staff_card.approved_by is None
+
+    # Librarian tries to reject staff card
+    reject_res = client.post(f'/librarian/id-cards/{staff_card.id}/reject', data={
+        'rejection_remarks': 'Unauthorized rejection attempt'
+    }, follow_redirects=True)
+
+    assert reject_res.status_code == 200
+    assert b'Access Denied: Staff and Librarian ID cards can ONLY be rejected by a System Administrator.' in reject_res.data
+    db.session.refresh(staff_card)
+    assert staff_card.status == StudentIdCard.STATUS_PENDING
+
+
+def test_admin_approves_staff_id_card(client, seed_test_data):
+    """Test System Administrator approves Librarian staff ID card and generates valid CR80 staff credentials."""
+    librarian = seed_test_data['librarian']
+    admin = seed_test_data['admin']
+
+    # Create pending staff card
+    staff_card = StudentIdCard(
+        student_id=librarian.id,
+        roll_number='LIB-TEST-003',
+        course_branch='Library Acquisition Dept',
+        academic_year='Head Librarian',
+        blood_group='O+',
+        card_number=StudentIdCard.generate_card_number('LIB-TEST-003'),
+        status=StudentIdCard.STATUS_PENDING,
+        payment_status='Waived',
+        payment_method='Staff / Institutional',
+        fee_amount=0.0
+    )
+    db.session.add(staff_card)
+    db.session.commit()
+
+    # Login as Admin
+    login_user(client, admin.email, 'AdminPass123')
+
+    # Admin filters ID cards by role=staff
+    filter_res = client.get('/admin/id-cards?role=staff')
+    assert filter_res.status_code == 200
+    assert b'LIB-TEST-003' in filter_res.data
+
+    # Admin approves librarian's staff card
+    approve_res = client.post(f'/admin/id-cards/{staff_card.id}/approve', data={
+        'validity_years': '5'
+    }, follow_redirects=True)
+
+    assert approve_res.status_code == 200
+    assert b'approved and issued successfully' in approve_res.data
+
+    db.session.refresh(staff_card)
+    assert staff_card.status == StudentIdCard.STATUS_APPROVED
+    assert staff_card.approved_by == admin.id
+    assert staff_card.issue_date is not None
+    assert staff_card.expiry_date is not None
+    assert staff_card.qr_code_path is not None
+
+    # Print route displays staff layout
+    print_res = client.get(f'/admin/id-cards/{staff_card.id}/print')
+    assert print_res.status_code == 200
+    assert b'FACULTY & LIBRARIAN IDENTITY CARD' in print_res.data
+    assert b'Department' in print_res.data
+    assert b'Designation' in print_res.data
+    assert b'Official Staff Credential & Circulation Desk' in print_res.data
+
+
+def test_admin_direct_my_id_card(client, seed_test_data):
+    """Test Administrator generates and self-issues an Executive Administrator ID card."""
+    admin = seed_test_data['admin']
+    login_user(client, admin.email, 'AdminPass123')
+
+    # View Admin My ID Card page
+    get_res = client.get('/admin/my-id-card')
+    assert get_res.status_code == 200
+    assert b'Request Official Administrator ID Card' in get_res.data
+    assert b'Issue Official Administrator ID Card' in get_res.data
+
+    # Submit Admin self-issuance
+    post_res = client.post('/admin/my-id-card', data={
+        'staff_code': 'ADM-EXEC-001',
+        'designation': 'Chief Information Officer & Library Admin',
+        'department': 'Central Library Directorate',
+        'blood_group': 'AB+',
+        'validity_years': '5'
+    }, follow_redirects=True)
+
+    assert post_res.status_code == 200
+    assert b'Administrator Library ID Card' in post_res.data
+    assert b'created and approved!' in post_res.data
+    assert b'Authorized Staff Card Active' in post_res.data
+    assert b'ADM-EXEC-001' in post_res.data
+
+    card = StudentIdCard.query.filter_by(student_id=admin.id).first()
+    assert card is not None
+    assert card.status == StudentIdCard.STATUS_APPROVED
+    assert card.approved_by == admin.id
+    assert card.fee_amount == 0.0
+    assert card.payment_status == 'Waived'
+    assert card.qr_code_path is not None
+

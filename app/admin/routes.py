@@ -582,6 +582,7 @@ def id_cards_list():
     """Admin view of all student ID card applications and issued cards."""
     status_filter = request.args.get('status', 'All')
     payment_filter = request.args.get('payment', 'All')
+    role_filter = request.args.get('role_type', 'All')
     search_query = request.args.get('q', '').strip()
 
     query = StudentIdCard.query.join(User, StudentIdCard.student_id == User.id)
@@ -590,6 +591,10 @@ def id_cards_list():
         query = query.filter(StudentIdCard.status == status_filter)
     if payment_filter in ('Pending', 'Paid', 'Waived'):
         query = query.filter(StudentIdCard.payment_status == payment_filter)
+    if role_filter == 'Students':
+        query = query.filter(User.role == 'student')
+    elif role_filter == 'Staff':
+        query = query.filter(User.role.in_(['librarian', 'admin']))
 
     if search_query:
         query = query.filter(
@@ -610,6 +615,7 @@ def id_cards_list():
     pending_count = StudentIdCard.query.filter_by(status=StudentIdCard.STATUS_PENDING).count()
     approved_count = StudentIdCard.query.filter_by(status=StudentIdCard.STATUS_APPROVED).count()
     rejected_count = StudentIdCard.query.filter_by(status=StudentIdCard.STATUS_REJECTED).count()
+    staff_count = StudentIdCard.query.join(User, StudentIdCard.student_id == User.id).filter(User.role.in_(['librarian', 'admin'])).count()
     total_fees_collected = db.session.query(db.func.sum(StudentIdCard.fee_amount)).filter(
         StudentIdCard.payment_status.in_([StudentIdCard.PAYMENT_PAID, StudentIdCard.PAYMENT_WAIVED])
     ).scalar() or Decimal('0.00')
@@ -619,11 +625,13 @@ def id_cards_list():
         cards=cards,
         current_status=status_filter,
         current_payment=payment_filter,
+        current_role=role_filter,
         search_query=search_query,
         total_count=total_count,
         pending_count=pending_count,
         approved_count=approved_count,
         rejected_count=rejected_count,
+        staff_count=staff_count,
         total_fees_collected=total_fees_collected,
         bp_prefix='admin'
     )
@@ -803,3 +811,96 @@ def id_card_print(card_id):
         QRService.generate_id_card_qr(card)
         db.session.commit()
     return render_template('student/id_card_print.html', card=card)
+
+
+@admin_bp.route('/my-id-card', methods=['GET', 'POST'])
+@admin_required
+def my_id_card():
+    """Admin request and view their own Executive Library ID Card."""
+    existing_card = StudentIdCard.query.filter_by(student_id=current_user.id).order_by(StudentIdCard.id.desc()).first()
+
+    if request.method == 'POST':
+        designation = request.form.get('designation', 'Library Administrator').strip()
+        department = request.form.get('department', 'Library Administration & IT').strip()
+        staff_code = request.form.get('staff_code', '').strip() or current_user.student_id or f"ADM{current_user.id:04d}"
+        blood_group = request.form.get('blood_group', '').strip()
+        dob_str = request.form.get('dob', '').strip()
+        emergency_contact = request.form.get('emergency_contact', '').strip()
+        address = request.form.get('address', '').strip()
+        validity_years = request.form.get('validity_years', 5, type=int)
+
+        dob = None
+        if dob_str:
+            try:
+                dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
+        photo_file = request.files.get('id_photo')
+        photo_path = current_user.profile_image
+
+        if photo_file and photo_file.filename:
+            raw_ext = Path(photo_file.filename).suffix.lower()
+            if raw_ext in ('.png', '.jpg', '.jpeg', '.webp'):
+                clean_name = f"adminphoto_{current_user.id}_{uuid.uuid4().hex[:8]}{raw_ext}"
+                avatars_dir = Path(current_app.config['UPLOAD_FOLDER']) / 'avatars'
+                avatars_dir.mkdir(parents=True, exist_ok=True)
+                dest = avatars_dir / clean_name
+                photo_file.save(str(dest))
+                photo_path = f"uploads/avatars/{clean_name}"
+                if not current_user.profile_image:
+                    current_user.profile_image = photo_path
+
+        card_number = StudentIdCard.generate_card_number(staff_code)
+
+        if existing_card:
+            card = existing_card
+            card.roll_number = staff_code
+            card.course_branch = department
+            card.academic_year = designation
+            card.blood_group = blood_group
+            card.dob = dob
+            card.emergency_contact = emergency_contact
+            card.address = address
+            if photo_path:
+                card.photo_path = photo_path
+        else:
+            card = StudentIdCard(
+                student_id=current_user.id,
+                roll_number=staff_code,
+                course_branch=department,
+                academic_year=designation,
+                blood_group=blood_group,
+                dob=dob,
+                emergency_contact=emergency_contact,
+                address=address,
+                photo_path=photo_path,
+                card_number=card_number,
+                fee_amount=Decimal('0.00'),
+                payment_status=StudentIdCard.PAYMENT_WAIVED,
+                payment_method='Executive / Administrator'
+            )
+            db.session.add(card)
+            db.session.flush()
+
+        # Admin approves card directly
+        card.approve(staff_user_id=current_user.id, validity_years=validity_years)
+        QRService.generate_id_card_qr(card)
+
+        AuditLog.record(
+            actor_id=current_user.id,
+            action='ISSUE_ADMIN_ID_CARD',
+            entity_type='StudentIdCard',
+            entity_id=card.id,
+            details=f"Admin {current_user.email} generated Administrator ID card {card.card_number}."
+        )
+        db.session.commit()
+
+        flash(f'Administrator Library ID Card {card.card_number} created and approved!', 'success')
+        return redirect(url_for('admin.my_id_card'))
+
+    if existing_card and existing_card.is_approved and not existing_card.qr_code_path:
+        QRService.generate_id_card_qr(existing_card)
+        db.session.commit()
+
+    return render_template('librarian/my_id_card.html', card=existing_card, role_title='Administrator', bp_prefix='admin')

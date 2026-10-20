@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% set prefix = bp_prefix|default('librarian') %}
+{% set is_admin_role = (prefix == 'admin') %}
+
+{% block title %}My {{ role_title|default('Staff') }} ID Card - Smart Library{% endblock %}
+
+{% block extra_css %}
+<style>
+    .id-card-cr80 {
+        width: 100%;
+        max-width: 460px;
+        aspect-ratio: 1.586;
+        border-radius: 16px;
+        background: {% if is_admin_role %}linear-gradient(135deg, #450a0a 0%, #7f1d1d 50%, #991b1b 100%){% else %}linear-gradient(135deg, #064e3b 0%, #047857 50%, #0f766e 100%){% endif %};
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 35px -10px {% if is_admin_role %}rgba(127, 29, 29, 0.45){% else %}rgba(4, 120, 87, 0.45){% endif %}, 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        margin: 0 auto 1.5rem auto;
+        transition: transform 0.3s ease;
+    }
+    .id-card-cr80:hover {
+        transform: translateY(-3px) scale(1.01);
+    }
+    .id-card-cr80-back {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+    .id-card-photo-frame {
+        width: 82px;
+        height: 98px;
+        border-radius: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        object-fit: cover;
+        background-color: #334155;
+    }
+    .hologram-seal {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #fde047 10%, #ec4899 45%, #06b6d4 85%);
+        opacity: 0.85;
+        box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+    }
+    .card-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .card-val {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #ffffff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <!-- Header & Breadcrumbs -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for(prefix ~ '.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for(prefix ~ '.id_cards_list') }}">ID Cards</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">My {{ role_title }} ID Card</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-person-badge text-primary"></i> Official {{ role_title }} Library ID Card
+            </h3>
+            <p class="text-muted small mb-0">Official identification card for library staff and administration members</p>
+        </div>
+
+        {% if card and card.is_approved %}
+            <div class="d-flex gap-2">
+                <a href="{{ url_for(prefix ~ '.id_card_print', card_id=card.id) }}" target="_blank" class="btn btn-outline-primary shadow-sm">
+                    <i class="bi bi-printer me-1"></i> Print ID Card
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if not card %}
+        <!-- ========================================== -->
+        <!-- STAFF APPLICATION / GENERATION FORM        -->
+        <!-- ========================================== -->
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-8">
+                <div class="smart-card p-4 p-md-5 shadow-sm">
+                    <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                        <span class="brand-icon-wrapper" style="width: 52px; height: 52px; font-size: 1.5rem;">
+                            <i class="bi bi-person-vcard-fill"></i>
+                        </span>
+                        <div>
+                            <h4 class="fw-bold mb-0">Request Official {{ role_title }} ID Card</h4>
+                            <p class="text-muted small mb-0">
+                                {% if is_admin_role %}
+                                    Generate your official Executive Administrator smart library identity card
+                                {% else %}
+                                    Submit your staff credentials for System Administrator review and authorization
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if not is_admin_role %}
+                        <div class="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-4">
+                            <i class="bi bi-shield-check fs-5 text-primary flex-shrink-0"></i>
+                            <div><strong>Security Governance:</strong> All staff and librarian ID cards are issued free of charge and require formal authorization from the <strong>System Administrator</strong>.</div>
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for(prefix ~ '.my_id_card') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Full Name</label>
+                                <input type="text" class="form-control bg-light" value="{{ current_user.full_name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Official Email</label>
+                                <input type="email" class="form-control bg-light" value="{{ current_user.email }}" readonly>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="staff_code">Employee / Staff ID Code <span class="text-danger">*</span></label>
+                                <input type="text" name="staff_code" id="staff_code" class="form-control" value="{{ current_user.student_id or (('ADM%04d' if is_admin_role else 'LIB%04d')|format(current_user.id)) }}" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="designation">Official Designation / Title <span class="text-danger">*</span></label>
+                                <input type="text" name="designation" id="designation" class="form-control" value="{{ 'System Administrator' if is_admin_role else 'Librarian' }}" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="department">Department / Division <span class="text-danger">*</span></label>
+                                <input type="text" name="department" id="department" class="form-control" value="{{ 'Library Administration & IT' if is_admin_role else 'Central Library' }}" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="blood_group">Blood Group</label>
+                                <select name="blood_group" id="blood_group" class="form-select">
+                                    <option value="">Select Blood Group</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="dob">Date of Birth</label>
+                                <input type="date" name="dob" id="dob" class="form-control">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="emergency_contact">Emergency Contact Phone</label>
+                                <input type="tel" name="emergency_contact" id="emergency_contact" class="form-control" value="{{ current_user.phone or '' }}" placeholder="Personal / Mobile number">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-dark" for="address">Campus / Residential Address</label>
+                                <textarea name="address" id="address" class="form-control" rows="2" placeholder="Faculty Quarters or City Residence address"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-dark">Staff Portrait Photo</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if current_user.profile_image %}
+                                        <img src="{{ url_for('static', filename=current_user.profile_image) }}" alt="Photo" class="id-card-photo-frame" id="photo_preview">
+                                    {% else %}
+                                        <div class="id-card-photo-frame d-flex align-items-center justify-content-center text-light" id="photo_preview">
+                                            <i class="bi bi-person-fill fs-1"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <input type="file" name="id_photo" class="form-control" accept="image/png, image/jpeg, image/webp" onchange="previewStaffPhoto(this)">
+                                        <span class="small text-muted">Upload a clear passport portrait or use your current profile picture.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if is_admin_role %}
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold text-dark" for="validity_years">Card Validity Duration</label>
+                                    <select name="validity_years" id="validity_years" class="form-select">
+                                        <option value="3">3 Years</option>
+                                        <option value="5" selected>5 Years (Standard Faculty / Admin)</option>
+                                        <option value="10">10 Years (Permanent Staff)</option>
+                                    </select>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="pt-4 border-top mt-4 d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for(prefix ~ '.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">
+                                {% if is_admin_role %}
+                                    <i class="bi bi-shield-check me-1"></i> Issue Official Administrator ID Card
+                                {% else %}
+                                    <i class="bi bi-send me-1"></i> Submit Request for Admin Approval
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    {% elif card.status == 'Pending' %}
+        <!-- ========================================== -->
+        <!-- PENDING REVIEW BANNER                       -->
+        <!-- ========================================== -->
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="smart-card p-4 p-md-5 shadow-sm text-center">
+                    <div class="brand-icon-wrapper mx-auto mb-3 bg-warning-subtle text-warning" style="width: 64px; height: 64px; font-size: 2rem;">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-1">Staff ID Card Queued for Admin Approval</h4>
+                    <p class="text-muted small mb-4">
+                        Your Staff ID Card application (Card #<code>{{ card.card_number }}</code>) has been submitted.
+                        In accordance with library compliance, staff credentials must be verified and approved by the <strong>System Administrator</strong>.
+                    </p>
+
+                    <div class="bg-light rounded-3 p-3 text-start mb-4">
+                        <h6 class="fw-bold text-dark mb-2">Submitted Staff Details:</h6>
+                        <div class="row g-2 small">
+                            <div class="col-5 text-muted">Staff Member:</div>
+                            <div class="col-7 fw-semibold text-dark">{{ card.student.full_name }}</div>
+                            <div class="col-5 text-muted">Employee Code:</div>
+                            <div class="col-7 fw-semibold text-primary font-monospace">{{ card.roll_number }}</div>
+                            <div class="col-5 text-muted">Designation:</div>
+                            <div class="col-7 fw-semibold text-dark">{{ card.academic_year }}</div>
+                            <div class="col-5 text-muted">Department:</div>
+                            <div class="col-7 fw-semibold text-dark">{{ card.course_branch }}</div>
+                            <div class="col-5 text-muted">Blood Group:</div>
+                            <div class="col-7 fw-semibold text-dark">{{ card.blood_group or 'N/A' }}</div>
+                            <div class="col-5 text-muted">Status:</div>
+                            <div class="col-7"><span class="badge bg-warning text-dark">Pending Admin Authorization</span></div>
+                        </div>
+                    </div>
+
+                    <a href="{{ url_for(prefix ~ '.dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-house me-1"></i> Return to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    {% elif card.status == 'Approved' %}
+        <!-- ========================================== -->
+        <!-- APPROVED STAFF CR80 DIGITAL CARD DISPLAY   -->
+        <!-- ========================================== -->
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+                <!-- Front Side -->
+                <div class="id-card-cr80">
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-white border-opacity-15 pb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="bg-white text-dark rounded p-1 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                                <i class="bi bi-shield-fill-check text-{% if is_admin_role %}danger{% else %}success{% endif %}"></i>
+                            </span>
+                            <div>
+                                <div class="fw-bold" style="font-size: 0.85rem; letter-spacing: 0.05em; line-height: 1.1;">SMART COLLEGE LIBRARY</div>
+                                <div style="font-size: 0.6rem; color: rgba(255,255,255,0.8); letter-spacing: 0.08em;">FACULTY & STAFF IDENTITY CARD</div>
+                            </div>
+                        </div>
+                        <div class="badge bg-white text-dark fw-bold px-2 py-1" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                            {{ card.student.role|upper }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 align-items-center py-2">
+                        {% if card.photo_path %}
+                            <img src="{{ url_for('static', filename=card.photo_path) }}" alt="{{ card.student.full_name }}" class="id-card-photo-frame flex-shrink-0">
+                        {% else %}
+                            <div class="id-card-photo-frame flex-shrink-0 d-flex align-items-center justify-content-center text-light">
+                                <i class="bi bi-person-fill fs-1"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-bold text-white text-truncate" style="font-size: 1.05rem;">
+                                {{ card.student.full_name }}
+                            </div>
+                            <div class="fw-semibold small mb-2 text-warning font-monospace">
+                                {{ card.roll_number }}
+                            </div>
+
+                            <div class="row g-1">
+                                <div class="col-7">
+                                    <div class="card-label">Designation</div>
+                                    <div class="card-val text-truncate" style="font-size: 0.72rem;">{{ card.academic_year }}</div>
+                                </div>
+                                <div class="col-5">
+                                    <div class="card-label">Department</div>
+                                    <div class="card-val text-truncate" style="font-size: 0.72rem;">{{ card.course_branch }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-end border-top border-white border-opacity-15 pt-2">
+                        <div>
+                            <div class="card-label">Staff Card ID</div>
+                            <div class="card-val font-monospace" style="font-size: 0.68rem;">{{ card.card_number }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="card-label">Valid Thru</div>
+                            <div class="card-val" style="font-size: 0.72rem; color: #4ade80;">
+                                {{ card.expiry_date.strftime('%b %Y') if card.expiry_date else 'Permanent' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Back Side -->
+                <div class="id-card-cr80 id-card-cr80-back">
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-white border-opacity-10 pb-2">
+                        <span class="card-label text-light">Official Staff Access Credential</span>
+                        <span class="badge bg-success-subtle text-success small py-0 px-2" style="font-size: 0.65rem;">Authorized</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <div style="font-size: 0.68rem; color: #cbd5e1; max-width: 65%;">
+                            <div class="mb-1"><strong class="text-white">Emergency:</strong> {{ card.emergency_contact or 'Campus Desk' }}</div>
+                            <div class="mb-1 text-truncate"><strong class="text-white">Address:</strong> {{ card.address or 'Campus Resident' }}</div>
+                            <div style="font-size: 0.6rem; color: #94a3b8;">
+                                Authorized for circulation desk supervision and administrative counter operations.
+                            </div>
+                        </div>
+                        <div class="p-1 bg-white rounded flex-shrink-0 shadow-sm">
+                            {% if card.qr_code_path %}
+                                <img src="{{ url_for('static', filename=card.qr_code_path) }}" alt="Scannable Staff QR" style="width: 72px; height: 72px;">
+                            {% else %}
+                                <i class="bi bi-qr-code text-dark" style="font-size: 64px;"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center border-top border-white border-opacity-10 pt-2" style="font-size: 0.62rem; color: #94a3b8;">
+                        <span>Issued: {{ card.issue_date.strftime('%d %b %Y') if card.issue_date else 'Today' }}</span>
+                        <span>Authorized By: {{ card.approver.full_name if card.approver else 'System Admin' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Info & Actions -->
+            <div class="col-lg-6">
+                <div class="smart-card p-4 shadow-sm">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                        <div>
+                            <span class="badge bg-success px-3 py-1 rounded-pill mb-1">
+                                <i class="bi bi-patch-check-fill me-1"></i> Authorized Staff Card Active
+                            </span>
+                            <h4 class="fw-bold text-dark mb-0">Staff Card Record</h4>
+                        </div>
+                        <a href="{{ url_for(prefix ~ '.id_card_print', card_id=card.id) }}" target="_blank" class="btn btn-primary px-3 shadow-sm">
+                            <i class="bi bi-printer me-1"></i> Print ID Card
+                        </a>
+                    </div>
+
+                    <table class="table table-sm smart-table mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted">Staff Name</td>
+                                <td class="fw-bold text-dark">{{ card.student.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Role & Status</td>
+                                <td>
+                                    <span class="badge {% if is_admin_role %}bg-danger{% else %}bg-primary{% endif %}">{{ card.student.role|upper }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Staff / Employee Code</td>
+                                <td class="fw-semibold text-primary font-monospace">{{ card.roll_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Designation</td>
+                                <td>{{ card.academic_year }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Department</td>
+                                <td>{{ card.course_branch }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Issue Date</td>
+                                <td>{{ card.issue_date.strftime('%d %B %Y') if card.issue_date else 'Today' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Valid Until</td>
+                                <td class="text-success fw-bold">{{ card.expiry_date.strftime('%d %B %Y') if card.expiry_date else 'Permanent' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Authorized By</td>
+                                <td>{{ card.approver.full_name if card.approver else 'System Administrator' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    {% elif card.status == 'Rejected' %}
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="smart-card p-4 p-md-5 shadow-sm text-center border-danger border-opacity-25">
+                    <div class="brand-icon-wrapper mx-auto mb-3 bg-danger-subtle text-danger" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                        <i class="bi bi-x-octagon"></i>
+                    </div>
+                    <h4 class="fw-bold text-danger mb-1">Staff ID Card Request Rejected</h4>
+                    <p class="text-muted small mb-3">Your request was reviewed by Administrator with remarks:</p>
+                    <div class="alert alert-danger py-2 px-3 d-inline-block text-start mb-4">
+                        {{ card.rejection_remarks or 'Credentials could not be verified.' }}
+                    </div>
+                    <div>
+                        <a href="{{ url_for(prefix ~ '.dashboard') }}" class="btn btn-outline-secondary me-2">Dashboard</a>
+                        <form method="POST" action="{{ url_for(prefix ~ '.my_id_card') }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger">Re-apply</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function previewStaffPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photo_preview');
+                if (preview.tagName === 'IMG') {
+                    preview.src = e.target.result;
+                } else {
+                    preview.outerHTML = '<img src="' + e.target.result + '" class="id-card-photo-frame" id="photo_preview">';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}

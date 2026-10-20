@@ -213,6 +213,7 @@ def id_cards_list():
     """List student ID card applications with status filtering, payment tracking, and actions."""
     status_filter = request.args.get('status', 'All')
     payment_filter = request.args.get('payment', 'All')
+    role_filter = request.args.get('role_type', 'All')
     search_query = request.args.get('q', '').strip()
 
     query = StudentIdCard.query.join(User, StudentIdCard.student_id == User.id)
@@ -221,6 +222,10 @@ def id_cards_list():
         query = query.filter(StudentIdCard.status == status_filter)
     if payment_filter in ('Pending', 'Paid', 'Waived'):
         query = query.filter(StudentIdCard.payment_status == payment_filter)
+    if role_filter == 'Students':
+        query = query.filter(User.role == 'student')
+    elif role_filter == 'Staff':
+        query = query.filter(User.role.in_(['librarian', 'admin']))
 
     if search_query:
         query = query.filter(
@@ -241,6 +246,7 @@ def id_cards_list():
     pending_count = StudentIdCard.query.filter_by(status=StudentIdCard.STATUS_PENDING).count()
     approved_count = StudentIdCard.query.filter_by(status=StudentIdCard.STATUS_APPROVED).count()
     rejected_count = StudentIdCard.query.filter_by(status=StudentIdCard.STATUS_REJECTED).count()
+    staff_count = StudentIdCard.query.join(User, StudentIdCard.student_id == User.id).filter(User.role.in_(['librarian', 'admin'])).count()
     total_fees_collected = db.session.query(db.func.sum(StudentIdCard.fee_amount)).filter(
         StudentIdCard.payment_status.in_([StudentIdCard.PAYMENT_PAID, StudentIdCard.PAYMENT_WAIVED])
     ).scalar() or Decimal('0.00')
@@ -250,11 +256,13 @@ def id_cards_list():
         cards=cards,
         current_status=status_filter,
         current_payment=payment_filter,
+        current_role=role_filter,
         search_query=search_query,
         total_count=total_count,
         pending_count=pending_count,
         approved_count=approved_count,
         rejected_count=rejected_count,
+        staff_count=staff_count,
         total_fees_collected=total_fees_collected
     )
 
@@ -372,6 +380,12 @@ def id_card_create():
 def id_card_approve(card_id):
     """Approve a pending student ID card application."""
     card = StudentIdCard.query.get_or_404(card_id)
+
+    # Rule: Staff & Librarian ID cards can only be approved by an Admin
+    if card.student.is_staff and not current_user.is_admin:
+        flash('Access Denied: Staff and Librarian ID cards can ONLY be approved by a System Administrator.', 'danger')
+        return redirect(request.referrer or url_for('librarian.id_cards_list'))
+
     validity_years = request.form.get('validity_years', 3, type=int)
 
     card.approve(staff_user_id=current_user.id, validity_years=validity_years)
@@ -386,11 +400,11 @@ def id_card_approve(card_id):
         action='APPROVE_ID_CARD',
         entity_type='StudentIdCard',
         entity_id=card.id,
-        details=f"Staff {current_user.email} approved Student ID card {card.card_number} for student {card.student.email}."
+        details=f"Staff {current_user.email} approved ID card {card.card_number} for {card.student.email}."
     )
     db.session.commit()
 
-    flash(f"Student ID Card {card.card_number} approved and issued successfully!", 'success')
+    flash(f"ID Card {card.card_number} approved and issued successfully!", 'success')
     return redirect(request.referrer or url_for('librarian.id_cards_list'))
 
 
@@ -399,6 +413,12 @@ def id_card_approve(card_id):
 def id_card_reject(card_id):
     """Reject a pending student ID card application with feedback."""
     card = StudentIdCard.query.get_or_404(card_id)
+
+    # Rule: Staff & Librarian ID cards can only be rejected by an Admin
+    if card.student.is_staff and not current_user.is_admin:
+        flash('Access Denied: Staff and Librarian ID cards can ONLY be rejected by a System Administrator.', 'danger')
+        return redirect(request.referrer or url_for('librarian.id_cards_list'))
+
     remarks = request.form.get('rejection_remarks', '').strip()
     if not remarks:
         remarks = 'Information provided could not be verified or photo is unclear. Please update and re-submit.'
@@ -410,11 +430,11 @@ def id_card_reject(card_id):
         action='REJECT_ID_CARD',
         entity_type='StudentIdCard',
         entity_id=card.id,
-        details=f"Staff {current_user.email} rejected Student ID card application {card.card_number}. Remarks: {remarks}"
+        details=f"Staff {current_user.email} rejected ID card application {card.card_number}. Remarks: {remarks}"
     )
     db.session.commit()
 
-    flash(f"Student ID Card application {card.card_number} was rejected.", 'warning')
+    flash(f"ID Card application {card.card_number} was rejected.", 'warning')
     return redirect(request.referrer or url_for('librarian.id_cards_list'))
 
 
@@ -438,3 +458,93 @@ def id_card_print(card_id):
         QRService.generate_id_card_qr(card)
         db.session.commit()
     return render_template('student/id_card_print.html', card=card)
+
+
+@librarian_bp.route('/my-id-card', methods=['GET', 'POST'])
+@staff_required
+def my_id_card():
+    """Librarian request and view their own official Staff Library ID Card."""
+    existing_card = StudentIdCard.query.filter_by(student_id=current_user.id).order_by(StudentIdCard.id.desc()).first()
+
+    if request.method == 'POST':
+        designation = request.form.get('designation', 'Librarian').strip()
+        department = request.form.get('department', 'Central Library').strip()
+        staff_code = request.form.get('staff_code', '').strip() or current_user.student_id or f"LIB{current_user.id:04d}"
+        blood_group = request.form.get('blood_group', '').strip()
+        dob_str = request.form.get('dob', '').strip()
+        emergency_contact = request.form.get('emergency_contact', '').strip()
+        address = request.form.get('address', '').strip()
+
+        dob = None
+        if dob_str:
+            try:
+                dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
+        photo_file = request.files.get('id_photo')
+        photo_path = current_user.profile_image
+
+        if photo_file and photo_file.filename:
+            raw_ext = Path(photo_file.filename).suffix.lower()
+            if raw_ext in ('.png', '.jpg', '.jpeg', '.webp'):
+                clean_name = f"staffphoto_{current_user.id}_{uuid.uuid4().hex[:8]}{raw_ext}"
+                avatars_dir = Path(current_app.config['UPLOAD_FOLDER']) / 'avatars'
+                avatars_dir.mkdir(parents=True, exist_ok=True)
+                dest = avatars_dir / clean_name
+                photo_file.save(str(dest))
+                photo_path = f"uploads/avatars/{clean_name}"
+                if not current_user.profile_image:
+                    current_user.profile_image = photo_path
+
+        card_number = StudentIdCard.generate_card_number(staff_code)
+
+        if existing_card and existing_card.status == StudentIdCard.STATUS_REJECTED:
+            card = existing_card
+            card.roll_number = staff_code
+            card.course_branch = department
+            card.academic_year = designation
+            card.blood_group = blood_group
+            card.dob = dob
+            card.emergency_contact = emergency_contact
+            card.address = address
+            if photo_path:
+                card.photo_path = photo_path
+            card.status = StudentIdCard.STATUS_PENDING
+            card.rejection_remarks = None
+        else:
+            card = StudentIdCard(
+                student_id=current_user.id,
+                roll_number=staff_code,
+                course_branch=department,
+                academic_year=designation,
+                blood_group=blood_group,
+                dob=dob,
+                emergency_contact=emergency_contact,
+                address=address,
+                photo_path=photo_path,
+                card_number=card_number,
+                fee_amount=Decimal('0.00'),
+                payment_status=StudentIdCard.PAYMENT_WAIVED,
+                payment_method='Staff / Institutional',
+                status=StudentIdCard.STATUS_PENDING
+            )
+            db.session.add(card)
+
+        AuditLog.record(
+            actor_id=current_user.id,
+            action='REQUEST_STAFF_ID_CARD',
+            entity_type='StudentIdCard',
+            entity_id=card.id,
+            details=f"Librarian {current_user.email} submitted Staff ID card request ({card.card_number})."
+        )
+        db.session.commit()
+
+        flash('Staff Library ID Card application submitted! As per library policy, it is queued for Administrator approval.', 'info')
+        return redirect(url_for('librarian.my_id_card'))
+
+    if existing_card and existing_card.is_approved and not existing_card.qr_code_path:
+        QRService.generate_id_card_qr(existing_card)
+        db.session.commit()
+
+    return render_template('librarian/my_id_card.html', card=existing_card, role_title='Librarian')

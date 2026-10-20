@@ -10,13 +10,16 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-person-vcard text-primary"></i> Student Library ID Cards
+                <i class="bi bi-person-vcard text-primary"></i> Library ID Cards Management
             </h3>
-            <p class="text-muted small mb-0">Review student applications, verify UPI fee payments, and issue official scannable CR80 smart cards</p>
+            <p class="text-muted small mb-0">Review student & staff applications, verify credentials, and issue official scannable CR80 smart cards</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ url_for(prefix ~ '.my_id_card') }}" class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-person-badge me-1"></i> My {{ 'Admin' if prefix == 'admin' else 'Staff' }} ID Card
+            </a>
             <a href="{{ url_for(prefix ~ '.id_card_create') }}" class="btn btn-primary shadow-sm">
-                <i class="bi bi-plus-circle me-1"></i> Issue New ID Card
+                <i class="bi bi-plus-circle me-1"></i> Issue Student Card
             </a>
         </div>
     </div>
@@ -71,31 +74,38 @@
     <!-- Filters & Search Toolbar -->
     <div class="smart-card p-3 mb-4 shadow-sm">
         <form method="GET" action="{{ url_for(prefix ~ '.id_cards_list') }}" class="row g-2 align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search by student name, roll no, card ID, or UTR..." value="{{ search_query }}">
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search by name, roll/code, card ID..." value="{{ search_query }}">
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="status" class="form-select" onchange="this.form.submit()">
-                    <option value="All" {% if current_status == 'All' %}selected{% endif %}>Approval Status: All</option>
+                    <option value="All" {% if current_status == 'All' %}selected{% endif %}>Status: All</option>
                     <option value="Pending" {% if current_status == 'Pending' %}selected{% endif %}>Pending Review</option>
-                    <option value="Approved" {% if current_status == 'Approved' %}selected{% endif %}>Approved / Issued</option>
+                    <option value="Approved" {% if current_status == 'Approved' %}selected{% endif %}>Approved</option>
                     <option value="Rejected" {% if current_status == 'Rejected' %}selected{% endif %}>Rejected</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="payment" class="form-select" onchange="this.form.submit()">
-                    <option value="All" {% if current_payment == 'All' %}selected{% endif %}>Payment Status: All</option>
+                    <option value="All" {% if current_payment == 'All' %}selected{% endif %}>Payment: All</option>
                     <option value="Paid" {% if current_payment == 'Paid' %}selected{% endif %}>Paid (UPI/Cash)</option>
-                    <option value="Pending" {% if current_payment == 'Pending' %}selected{% endif %}>Unpaid / Pending</option>
-                    <option value="Waived" {% if current_payment == 'Waived' %}selected{% endif %}>Fee Waived</option>
+                    <option value="Pending" {% if current_payment == 'Pending' %}selected{% endif %}>Unpaid</option>
+                    <option value="Waived" {% if current_payment == 'Waived' %}selected{% endif %}>Fee Waived / Staff</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="role_type" class="form-select" onchange="this.form.submit()">
+                    <option value="All" {% if current_role == 'All' %}selected{% endif %}>Role: All Cards</option>
+                    <option value="Students" {% if current_role == 'Students' %}selected{% endif %}>Student Cards Only</option>
+                    <option value="Staff" {% if current_role == 'Staff' %}selected{% endif %}>Staff & Librarian Cards</option>
                 </select>
             </div>
             <div class="col-md-1 d-flex gap-1">
                 <button type="submit" class="btn btn-outline-primary w-100" title="Filter"><i class="bi bi-funnel"></i></button>
-                {% if search_query or current_status != 'All' or current_payment != 'All' %}
+                {% if search_query or current_status != 'All' or current_payment != 'All' or current_role != 'All' %}
                     <a href="{{ url_for(prefix ~ '.id_cards_list') }}" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-circle"></i></a>
                 {% endif %}
             </div>
@@ -108,11 +118,11 @@
             <table class="table smart-table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>Student</th>
-                        <th>Roll No & Course</th>
+                        <th>Holder / Member</th>
+                        <th>Role & Code</th>
                         <th>Card Number</th>
-                        <th>UPI / Fee Payment</th>
-                        <th>Application Status</th>
+                        <th>Fee / Payment</th>
+                        <th>Status</th>
                         <th>Applied On</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -131,7 +141,12 @@
                                             </div>
                                         {% endif %}
                                         <div>
-                                            <div class="fw-bold text-dark">{{ card.student.full_name }}</div>
+                                            <div class="fw-bold text-dark d-flex align-items-center gap-1">
+                                                {{ card.student.full_name }}
+                                                <span class="badge {% if card.student.is_admin %}bg-danger{% elif card.student.is_librarian %}bg-info text-dark{% else %}bg-primary{% endif %}" style="font-size: 0.65rem;">
+                                                    {{ card.student.role|upper }}
+                                                </span>
+                                            </div>
                                             <div class="text-muted small">{{ card.student.email }}</div>
                                         </div>
                                     </div>
