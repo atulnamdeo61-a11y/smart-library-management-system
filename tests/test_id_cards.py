@@ -256,3 +256,9 @@ def test_authorization_restrictions(client, seed_test_data):
 
     admin_res = client.get('/admin/id-cards')
     assert admin_res.status_code == 403
+
+    # Staff (Admin and Librarian) can access print view without 403 Forbidden
+    login_user(client, 'admin@test.edu', 'AdminPass123')
+    staff_print_res = client.get('/student/id-card/print')
+    assert staff_print_res.status_code == 200
+    assert b'SMART COLLEGE LIBRARY' in staff_print_res.data
