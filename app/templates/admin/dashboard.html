@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Administrator Dashboard - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Library Administration & Analytics</h2>
+            <p class="text-muted small mb-0">System performance, real-time inventory statistics, circulation trends, and administrative controls.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.book_new') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Add New Book
+            </a>
+            <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-printer me-1"></i> Print Reports
+            </a>
+            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-person-gear me-1"></i> My Profile
+            </a>
+            <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-gear me-1"></i> System Rules
+            </a>
+        </div>
+    </div>
+
+    <!-- 6 Key Performance Indicator (KPI) Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-2">
+            <div class="metric-card h-100">
+                <div class="metric-label text-truncate">Unique Titles</div>
+                <div class="metric-number text-primary">{{ metrics.total_unique_books }}</div>
+                <span class="small text-muted">{{ metrics.total_physical_copies }} copies total</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="metric-card h-100">
+                <div class="metric-label text-truncate">Active Loans</div>
+                <div class="metric-number text-info">{{ metrics.active_loans }}</div>
+                <span class="small text-muted">{{ metrics.available_copies }} available</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="metric-card h-100">
+                <div class="metric-label text-truncate">Overdue Loans</div>
+                <div class="metric-number text-danger">{{ metrics.overdue_loans }}</div>
+                <span class="small text-danger fw-semibold">₹2.00 / day fine</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="metric-card h-100">
+                <div class="metric-label text-truncate">Pending Requests</div>
+                <div class="metric-number text-warning">{{ metrics.pending_requests }}</div>
+                <span class="small text-muted">Awaiting review</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="metric-card h-100">
+                <div class="metric-label text-truncate">Registered Students</div>
+                <div class="metric-number text-success">{{ metrics.total_students }}</div>
+                <span class="small text-muted">{{ metrics.total_librarians }} staff</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="metric-card h-100">
+                <div class="metric-label text-truncate">Outstanding Fines</div>
+                <div class="metric-number {% if metrics.total_outstanding_fines > 0 %}text-danger{% else %}text-muted{% endif %}">
+                    {{ metrics.formatted_outstanding_fines }}
+                </div>
+                <span class="small text-success">{{ metrics.formatted_total_paid }} collected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Visualizations (Section 10 Feature C) -->
+    <div class="row g-4 mb-4">
+        <!-- Monthly Circulation Activity Trend -->
+        <div class="col-lg-8">
+            <div class="smart-card p-4 shadow-sm h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-graph-up text-primary me-2"></i> Monthly Borrowing Activity (Last 6 Months)</h5>
+                    <span class="badge bg-light text-dark border">Real DB Metrics</span>
+                </div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="monthlyActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Distribution by Category -->
+        <div class="col-lg-4">
+            <div class="smart-card p-4 shadow-sm h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-pie-chart text-accent me-2"></i> Catalog by Category</h5>
+                </div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="categoryDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Circulation Activity & Recent Audit Logs -->
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="smart-card shadow-sm h-100">
+                <div class="card-header-styled d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-arrow-left-right text-primary me-2"></i> Recent Circulation Activity</h5>
+                    <a href="{{ url_for('admin.loans_list') }}" class="btn btn-outline-primary btn-sm">All Loans</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table smart-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Book Title</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_activity %}
+                                {% for loan in recent_activity %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ loan.student.full_name }}</div>
+                                            <div class="small text-muted">{{ loan.student.student_id or loan.student.email }}</div>
+                                        </td>
+                                        <td class="text-truncate" style="max-width: 180px;" title="{{ loan.book.title }}">{{ loan.book.title }}</td>
+                                        <td>{{ loan.issue_date.strftime('%d-%b-%Y') }}</td>
+                                        <td>{{ loan.due_date.strftime('%d-%b-%Y') }}</td>
+                                        <td>
+                                            {% if loan.status == 'Active' %}
+                                                {% if loan.is_overdue %}
+                                                    <span class="status-badge status-overdue">Overdue</span>
+                                                {% else %}
+                                                    <span class="status-badge status-active">Active</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="status-badge status-returned">Returned</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No circulation activity recorded yet.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Trail Snapshot -->
+        <div class="col-lg-5">
+            <div class="smart-card shadow-sm h-100">
+                <div class="card-header-styled d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-shield-check text-success me-2"></i> Security Audit Trail</h5>
+                    <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline-secondary btn-sm">View All</a>
+                </div>
+                <div class="p-3">
+                    {% if recent_logs %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for log in recent_logs %}
+                                <div class="border-bottom pb-2">
+                                    <div class="d-flex justify-content-between align-items-center small">
+                                        <span class="badge bg-light text-dark border">{{ log.action }}</span>
+                                        <span class="text-muted">{{ log.created_at.strftime('%d-%b %H:%M') }}</span>
+                                    </div>
+                                    <div class="small text-dark mt-1 text-truncate" title="{{ log.details }}">
+                                        {{ log.details or 'Action logged.' }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">No audit logs recorded yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 1. Monthly Loans Line Chart
+    const monthlyCtx = document.getElementById('monthlyActivityChart').getContext('2d');
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.month_labels | tojson }},
+            datasets: [{
+                label: 'Books Borrowed',
+                data: {{ chart_data.month_counts | tojson }},
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.08)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#4f46e5',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // 2. Books by Category Doughnut Chart
+    const categoryCtx = document.getElementById('categoryDistributionChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_data.category_labels | tojson }},
+            datasets: [{
+                data: {{ chart_data.category_counts | tojson }},
+                backgroundColor: [
+                    '#4f46e5', '#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#64748b'
+                ],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { size: 11 } }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

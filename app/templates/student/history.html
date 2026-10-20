@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Borrowing History - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="mb-4">
+        <h3 class="fw-bold mb-1">Borrowing History & Past Requests</h3>
+        <p class="text-muted small mb-0">Complete historical audit trail of returned loans and previous book requests.</p>
+    </div>
+
+    <!-- Returned Loans Section -->
+    <div class="smart-card mb-4 shadow-sm">
+        <div class="card-header-styled">
+            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i> Successfully Returned Loans</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Category</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Returned Date</th>
+                        <th>Return Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if returned_loans %}
+                        {% for loan in returned_loans %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ loan.book.title }}</div>
+                                    <div class="small text-muted">{{ loan.book.author }}</div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ loan.book.category.name }}</span></td>
+                                <td>{{ loan.issue_date.strftime('%d-%b-%Y') }}</td>
+                                <td>{{ loan.due_date.strftime('%d-%b-%Y') }}</td>
+                                <td>{{ loan.return_date.strftime('%d-%b-%Y') if loan.return_date else 'N/A' }}</td>
+                                <td>
+                                    {% if loan.return_date and loan.due_date and loan.return_date > loan.due_date %}
+                                        <span class="badge bg-warning-subtle text-warning">Returned Overdue</span>
+                                    {% else %}
+                                        <span class="badge bg-success-subtle text-success">Returned On Time</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No historical loans on record.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- All Requests History Section -->
+    <div class="smart-card shadow-sm">
+        <div class="card-header-styled">
+            <h5 class="fw-bold mb-0"><i class="bi bi-inbox me-2 text-secondary"></i> All Borrow Requests History</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Requested Book</th>
+                        <th>Requested Timestamp</th>
+                        <th>Status</th>
+                        <th>Reviewed At</th>
+                        <th>Remarks / Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if requests %}
+                        {% for req in requests %}
+                            <tr>
+                                <td class="fw-semibold">{{ req.book.title }}</td>
+                                <td>{{ req.requested_at.strftime('%d-%b-%Y %I:%M %p') }}</td>
+                                <td>
+                                    {% if req.status == 'Approved' %}
+                                        <span class="status-badge status-active"><i class="bi bi-check-circle"></i> Approved</span>
+                                    {% elif req.status == 'Pending' %}
+                                        <span class="status-badge status-pending"><i class="bi bi-clock"></i> Pending</span>
+                                    {% elif req.status == 'Cancelled' %}
+                                        <span class="status-badge status-returned"><i class="bi bi-dash-circle"></i> Cancelled</span>
+                                    {% else %}
+                                        <span class="status-badge status-rejected"><i class="bi bi-x-circle"></i> Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.reviewed_at.strftime('%d-%b-%Y %I:%M %p') if req.reviewed_at else '-' }}</td>
+                                <td class="small text-muted">{{ req.remarks or '-' }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No borrow requests found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

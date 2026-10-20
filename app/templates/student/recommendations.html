@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Recommended Books - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="bi bi-stars text-primary me-2"></i>Smart Book Recommendations</h3>
+            <p class="text-muted small mb-0">Personalized algorithmic suggestions powered by your reading preferences, past borrowing, and college trends.</p>
+        </div>
+        <a href="{{ url_for('student.preferences') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-sliders me-1"></i> Adjust My Reading Interests
+        </a>
+    </div>
+
+    {% if not has_preferences %}
+        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+            <div>
+                <strong>Want better personalized recommendations?</strong>
+                <div class="small">You haven't selected your topic interests yet. Currently displaying popular college library books. <a href="{{ url_for('student.preferences') }}" class="alert-link">Select your favorite subjects now &raquo;</a></div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if recommendations %}
+        <div class="row g-4">
+            {% for item in recommendations %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="smart-card smart-card-interactive h-100 d-flex flex-column">
+                        <div class="book-cover-placeholder position-relative">
+                            <i class="bi bi-bookmark-star"></i>
+                            <div class="position-absolute top-0 end-0 m-3">
+                                <span class="status-badge status-active">
+                                    {{ item.book.available_copies }} In Stock
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 d-flex flex-column flex-grow-1">
+                            <div class="mb-2">
+                                <span class="rec-reason-badge">
+                                    <i class="bi bi-lightbulb-fill"></i> {{ item.reason }}
+                                </span>
+                            </div>
+
+                            <span class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.75rem;">
+                                {{ item.book.category.name }}
+                            </span>
+                            <h5 class="fw-bold mb-1 text-truncate" title="{{ item.book.title }}">{{ item.book.title }}</h5>
+                            <p class="text-secondary small mb-2"><i class="bi bi-person me-1"></i>{{ item.book.author }}</p>
+
+                            <p class="text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                {{ item.book.description or 'Academic reference volume.' }}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                <span class="small text-muted">
+                                    <i class="bi bi-geo-alt me-1"></i>{{ item.book.shelf_location or 'Main' }}
+                                </span>
+                                <a href="{{ url_for('books.detail', book_id=item.book.id) }}" class="btn btn-primary btn-sm px-3">
+                                    View Details <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="smart-card p-5 text-center my-4">
+            <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
+            <h4 class="fw-bold mb-2">No Recommendations Available</h4>
+            <p class="text-muted mb-3">All matching books may currently be on active loan or no books have been added to your chosen topics.</p>
+            <a href="{{ url_for('books.catalog') }}" class="btn btn-primary">Browse All Books</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

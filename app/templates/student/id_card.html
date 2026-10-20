@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+
+{% block title %}Student Library ID Card - Smart Library{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* CR80 Physical Card Standard (85.6mm x 54mm) Simulation */
+    .id-card-wrapper {
+        perspective: 1000px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    .id-card-cr80 {
+        width: 100%;
+        aspect-ratio: 1.586;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e3a8a 100%);
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .id-card-cr80:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 25px 40px -10px rgba(30, 58, 138, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    }
+    .id-card-cr80::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .id-card-cr80-back {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #172554 100%);
+    }
+    .id-card-photo-frame {
+        width: 82px;
+        height: 98px;
+        border-radius: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.85);
+        object-fit: cover;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        background-color: #334155;
+    }
+    .hologram-seal {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #fde047 10%, #ec4899 45%, #06b6d4 85%);
+        opacity: 0.85;
+        box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+    }
+    .card-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .card-val {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #f8fafc;
+    }
+    .upi-qr-card {
+        border-radius: 20px;
+        border: 2px dashed #3b82f6;
+        background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+    }
+    .pulse-badge {
+        animation: pulse-ring 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    @keyframes pulse-ring {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for('student.dashboard') }}">Student Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Student ID Card</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-person-badge text-primary"></i> Digital Student Library ID Card
+            </h3>
+            <p class="text-muted small mb-0">Official identification card for college library circulation, physical book borrowing, and barcode entry</p>
+        </div>
+        {% if card and card.is_approved %}
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('student.id_card_print') }}" target="_blank" class="btn btn-outline-primary shadow-sm">
+                    <i class="bi bi-printer me-1"></i> Print / PDF
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if not card %}
+        <!-- ========================================== -->
+        <!-- NO APPLICATION: REQUEST / REGISTRATION FORM -->
+        <!-- ========================================== -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="smart-card p-4 p-md-5 shadow-sm">
+                    <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                        <span class="brand-icon-wrapper" style="width: 50px; height: 50px; font-size: 1.4rem;">
+                            <i class="bi bi-person-vcard"></i>
+                        </span>
+                        <div>
+                            <h4 class="fw-bold mb-0">Apply for Student Library ID Card</h4>
+                            <p class="text-muted small mb-0">Fill in your academic and contact details to request an official smart card</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('student.id_card') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Full Name</label>
+                                <input type="text" class="form-control bg-light" value="{{ current_user.full_name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">College Email</label>
+                                <input type="email" class="form-control bg-light" value="{{ current_user.email }}" readonly>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Roll Number / Student ID</label>
+                                <input type="text" class="form-control bg-light" value="{{ current_user.student_id or 'STU' ~ '%04d'|format(current_user.id) }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Blood Group</label>
+                                <select name="blood_group" class="form-select">
+                                    <option value="">Select Blood Group</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="course_branch">Course & Branch <span class="text-danger">*</span></label>
+                                <input type="text" name="course_branch" id="course_branch" class="form-control" placeholder="e.g. B.Tech Computer Science & Engg" required>
+                                <span class="small text-muted">Your registered degree and academic department.</span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="academic_year">Academic Year / Batch <span class="text-danger">*</span></label>
+                                <input type="text" name="academic_year" id="academic_year" class="form-control" placeholder="e.g. 2024-2028 (Year 2)" required>
+                                <span class="small text-muted">Current batch or semester.</span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="dob">Date of Birth</label>
+                                <input type="date" name="dob" id="dob" class="form-control">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark" for="emergency_contact">Emergency Contact Number</label>
+                                <input type="tel" name="emergency_contact" id="emergency_contact" class="form-control" placeholder="Guardian / Alternate Mobile" value="{{ current_user.phone or '' }}">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-dark" for="address">Residential / Hostel Address</label>
+                                <textarea name="address" id="address" rows="2" class="form-control" placeholder="Hostel Room / Home City address"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-dark">ID Card Photo</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if current_user.profile_image %}
+                                        <img src="{{ url_for('static', filename=current_user.profile_image) }}" alt="Current Photo" class="id-card-photo-frame" id="photo_preview">
+                                    {% else %}
+                                        <div class="id-card-photo-frame d-flex align-items-center justify-content-center text-muted" id="photo_preview">
+                                            <i class="bi bi-person-bounding-box fs-2"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <input type="file" name="id_photo" id="id_photo" class="form-control" accept="image/png, image/jpeg, image/webp" onchange="previewIdPhoto(this)">
+                                        <div class="form-text small text-muted">Upload a clear passport-style formal portrait. (PNG, JPG, or WEBP up to 2MB). If omitted, your current profile image will be used.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 mt-3 border-top d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+                                <i class="bi bi-qr-code-scan me-1"></i> Proceed to Dynamic UPI Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="smart-card p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center gap-2 text-primary">
+                        <i class="bi bi-info-circle"></i> ID Card Benefits
+                    </h5>
+                    <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+                            <span class="small"><strong>Instant Desk Checkout:</strong> Fast scannable QR barcode for quick book issues and returns at the library counter.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+                            <span class="small"><strong>Valid for 3 Academic Years:</strong> High-res CR80 printable card with college watermark.</span>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+                            <span class="small"><strong>Automated UPI Processing:</strong> Dynamic QR generation instantly links your student ID with payment.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="smart-card p-4 shadow-sm bg-light border-0">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">One-time ID Card Fee:</span>
+                        <span class="fs-4 fw-bold text-primary">{{ currency_symbol }}{{ "%.2f"|format(config['ID_CARD_FEE']|float) }}</span>
+                    </div>
+                    <div class="small text-muted mb-0">
+                        Payable via Google Pay, PhonePe, Paytm, BHIM, or any UPI app.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% elif card.status == 'Pending' %}
+        <!-- ========================================== -->
+        <!-- PENDING STATUS: PAYMENT OR LIBRARIAN REVIEW -->
+        <!-- ========================================== -->
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-7">
+                {% if not card.is_paid %}
+                    <!-- DYNAMIC UPI QR PAYMENT CARD -->
+                    <div class="smart-card p-4 p-md-5 shadow-sm upi-qr-card text-center mb-4">
+                        <div class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3">
+                            <i class="bi bi-hourglass-split me-1"></i> Payment Pending
+                        </div>
+                        <h4 class="fw-bold mb-1 text-dark">Scan to Pay ID Card Fee</h4>
+                        <p class="text-muted small mb-4">Scan the dynamic QR code with any UPI app to complete your ID card application</p>
+
+                        <!-- High Resolution Dynamic UPI QR -->
+                        <div class="d-inline-block p-3 bg-white rounded-4 shadow-sm border border-2 border-primary mb-3">
+                            {% if card.upi_qr_path %}
+                                <img src="{{ url_for('static', filename=card.upi_qr_path) }}" alt="Dynamic UPI Payment QR" style="width: 220px; height: 220px;" class="img-fluid rounded">
+                            {% endif %}
+                            <div class="mt-2 fw-bold text-dark fs-5">
+                                ₹{{ "%.2f"|format(card.fee_amount|float) }}
+                            </div>
+                        </div>
+
+                        <!-- UPI Merchant Details -->
+                        <div class="bg-white rounded-3 p-3 text-start shadow-xs mb-4 border">
+                            <div class="d-flex justify-content-between py-1 border-bottom">
+                                <span class="text-muted small">Payee Name:</span>
+                                <span class="fw-semibold text-dark small">{{ config['UPI_PAYEE_NAME'] }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                <span class="text-muted small">UPI VPA:</span>
+                                <span class="fw-semibold text-primary small d-flex align-items-center gap-1">
+                                    <code id="upi_id_text">{{ config['UPI_ID'] }}</code>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" onclick="copyUPI()" title="Copy UPI ID">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1">
+                                <span class="text-muted small">Transaction Note:</span>
+                                <span class="fw-semibold text-dark small">IDCard-{{ card.roll_number }}-{{ card.id }}</span>
+                            </div>
+                        </div>
+
+                        {% if upi_uri %}
+                            <div class="mb-4">
+                                <a href="{{ upi_uri }}" class="btn btn-primary d-md-none w-100 py-2">
+                                    <i class="bi bi-phone me-1"></i> Tap to Pay with Installed UPI App
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        <!-- UTR SUBMISSION FORM -->
+                        <div class="bg-white rounded-4 p-4 text-start border shadow-sm">
+                            <h5 class="fw-bold mb-2 text-dark">Step 2: Enter UPI Reference (UTR)</h5>
+                            <p class="text-muted small mb-3">After completing payment in Google Pay / PhonePe / Paytm / BHIM, copy the 12-digit UTR / UPI Transaction ID and submit it below:</p>
+
+                            <form method="POST" action="{{ url_for('student.id_card_submit_payment') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-dark" for="utr_reference">UPI Reference / UTR Number <span class="text-danger">*</span></label>
+                                    <input type="text" name="utr_reference" id="utr_reference" class="form-control form-control-lg" placeholder="e.g. 429381729012" pattern="[A-Za-z0-9]{6,25}" required>
+                                    <span class="small text-muted">Found in payment receipt details as "UPI Ref ID" or "UTR".</span>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 py-2 fw-bold">
+                                    <i class="bi bi-check-circle me-1"></i> Confirm Payment & Submit for Approval
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- PAYMENT RECORDED: AWAITING LIBRARIAN APPROVAL -->
+                    <div class="smart-card p-4 p-md-5 shadow-sm text-center">
+                        <div class="brand-icon-wrapper mx-auto mb-3 bg-info-subtle text-info pulse-badge" style="width: 64px; height: 64px; font-size: 2rem;">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-1">Application Queued for Approval</h4>
+                        <p class="text-muted small mb-4">Your payment of <strong>₹{{ "%.2f"|format(card.fee_amount|float) }}</strong> (UTR: <code>{{ card.payment_reference }}</code>) has been logged. The librarian will verify your details and issue your card shortly.</p>
+
+                        <div class="bg-light rounded-3 p-3 text-start mb-4">
+                            <h6 class="fw-bold text-dark mb-2">Submitted Details Preview:</h6>
+                            <div class="row g-2 small">
+                                <div class="col-6 text-muted">Card Number:</div>
+                                <div class="col-6 fw-semibold text-dark">{{ card.card_number }}</div>
+                                <div class="col-6 text-muted">Course / Branch:</div>
+                                <div class="col-6 fw-semibold text-dark">{{ card.course_branch }}</div>
+                                <div class="col-6 text-muted">Academic Batch:</div>
+                                <div class="col-6 fw-semibold text-dark">{{ card.academic_year }}</div>
+                                <div class="col-6 text-muted">Blood Group:</div>
+                                <div class="col-6 fw-semibold text-dark">{{ card.blood_group or 'N/A' }}</div>
+                                <div class="col-6 text-muted">Payment Status:</div>
+                                <div class="col-6"><span class="badge bg-success">Paid via UPI</span></div>
+                            </div>
+                        </div>
+
+                        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-house me-1"></i> Return to Dashboard
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    {% elif card.status == 'Approved' %}
+        <!-- ========================================== -->
+        <!-- APPROVED STATUS: CR80 DIGITAL CARD DISPLAY -->
+        <!-- ========================================== -->
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+                <div class="id-card-wrapper mb-4">
+                    <!-- CR80 FRONT SIDE -->
+                    <div class="id-card-cr80 mb-3" id="card_front">
+                        <!-- Top Header -->
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-white border-opacity-10 pb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="bg-primary text-white rounded p-1 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                                    <i class="bi bi-book-half"></i>
+                                </span>
+                                <div>
+                                    <div class="fw-bold" style="font-size: 0.85rem; letter-spacing: 0.05em; line-height: 1.1;">SMART COLLEGE LIBRARY</div>
+                                    <div style="font-size: 0.6rem; color: #93c5fd; letter-spacing: 0.08em;">STUDENT IDENTITY CARD</div>
+                                </div>
+                            </div>
+                            <div class="hologram-seal" title="Security Hologram"></div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="d-flex gap-3 align-items-center py-2">
+                            {% if card.photo_path %}
+                                <img src="{{ url_for('static', filename=card.photo_path) }}" alt="{{ card.student.full_name }}" class="id-card-photo-frame flex-shrink-0">
+                            {% else %}
+                                <div class="id-card-photo-frame flex-shrink-0 d-flex align-items-center justify-content-center text-light">
+                                    <i class="bi bi-person-fill fs-1"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-bold text-white text-truncate" style="font-size: 1.05rem; letter-spacing: 0.02em;">
+                                    {{ card.student.full_name }}
+                                </div>
+                                <div class="text-primary-emphasis fw-semibold small mb-2 text-truncate" style="color: #60a5fa !important;">
+                                    {{ card.roll_number }}
+                                </div>
+
+                                <div class="row g-1">
+                                    <div class="col-7">
+                                        <div class="card-label">Course / Branch</div>
+                                        <div class="card-val text-truncate" style="font-size: 0.72rem;">{{ card.course_branch }}</div>
+                                    </div>
+                                    <div class="col-5">
+                                        <div class="card-label">Blood Group</div>
+                                        <div class="card-val" style="font-size: 0.72rem;">{{ card.blood_group or 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="d-flex justify-content-between align-items-end border-top border-white border-opacity-10 pt-2">
+                            <div>
+                                <div class="card-label">Card Number</div>
+                                <div class="card-val font-monospace" style="font-size: 0.68rem; color: #e2e8f0;">{{ card.card_number }}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="card-label">Valid Until</div>
+                                <div class="card-val" style="font-size: 0.72rem; color: #4ade80;">
+                                    {{ card.expiry_date.strftime('%b %Y') if card.expiry_date else 'Permanent' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CR80 BACK SIDE -->
+                    <div class="id-card-cr80 id-card-cr80-back" id="card_back">
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-white border-opacity-10 pb-2">
+                            <span class="card-label text-light">Circulation Desk Access Code</span>
+                            <span class="badge bg-success-subtle text-success small py-0 px-2" style="font-size: 0.65rem;">Active</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <div style="font-size: 0.68rem; color: #cbd5e1; max-width: 65%;">
+                                <div class="mb-1"><strong class="text-white">Emergency:</strong> {{ card.emergency_contact or 'N/A' }}</div>
+                                <div class="mb-1 text-truncate"><strong class="text-white">Address:</strong> {{ card.address or 'Campus Resident' }}</div>
+                                <div style="font-size: 0.6rem; color: #94a3b8;">
+                                    This card remains college property and is mandatory for library loans. If found, please return to Central Library Desk.
+                                </div>
+                            </div>
+                            <div class="p-1 bg-white rounded flex-shrink-0 shadow-sm">
+                                {% if card.qr_code_path %}
+                                    <img src="{{ url_for('static', filename=card.qr_code_path) }}" alt="Scannable Circulation QR" style="width: 72px; height: 72px;">
+                                {% else %}
+                                    <i class="bi bi-qr-code text-dark" style="font-size: 64px;"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center border-top border-white border-opacity-10 pt-2" style="font-size: 0.62rem; color: #94a3b8;">
+                            <span>Issued: {{ card.issue_date.strftime('%d %b %Y') if card.issue_date else 'Today' }}</span>
+                            <span>Authorized Library Seal</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD DETAILS & ACTION PANEL -->
+            <div class="col-lg-6">
+                <div class="smart-card p-4 shadow-sm mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                        <div>
+                            <span class="badge bg-success px-3 py-1 rounded-pill mb-1">
+                                <i class="bi bi-patch-check-fill me-1"></i> Card Approved & Active
+                            </span>
+                            <h4 class="fw-bold text-dark mb-0">Card Details</h4>
+                        </div>
+                        <a href="{{ url_for('student.id_card_print') }}" target="_blank" class="btn btn-primary px-3 shadow-sm">
+                            <i class="bi bi-printer me-1"></i> Print ID Card
+                        </a>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm smart-table mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted">Card Identification</td>
+                                    <td class="fw-bold text-dark font-monospace">{{ card.card_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Student Name</td>
+                                    <td class="fw-bold text-dark">{{ card.student.full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Roll Number</td>
+                                    <td class="fw-semibold text-primary">{{ card.roll_number }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Degree / Branch</td>
+                                    <td>{{ card.course_branch }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Issue Date</td>
+                                    <td>{{ card.issue_date.strftime('%d %B %Y') if card.issue_date else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Expiry Date</td>
+                                    <td class="text-success fw-bold">{{ card.expiry_date.strftime('%d %B %Y') if card.expiry_date else 'Permanent' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Fee Paid</td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success">
+                                            {{ currency_symbol }}{{ "%.2f"|format(card.fee_amount|float) }} (UPI UTR: {{ card.payment_reference or 'Verified' }})
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill fs-5 text-info flex-shrink-0"></i>
+                        <span>Present the digital QR code on your mobile or the printed physical card at the circulation counter to issue books instantly.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% elif card.status == 'Rejected' %}
+        <!-- ========================================== -->
+        <!-- REJECTED STATUS: REASON & RE-APPLY FORM     -->
+        <!-- ========================================== -->
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-8">
+                <div class="smart-card p-4 p-md-5 shadow-sm border border-danger border-opacity-25 mb-4">
+                    <div class="brand-icon-wrapper mx-auto mb-3 bg-danger-subtle text-danger" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                        <i class="bi bi-x-octagon"></i>
+                    </div>
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold text-danger mb-1">ID Card Application Rejected</h4>
+                        <p class="text-muted small">Your previous student ID card application could not be approved due to the following reason:</p>
+                        <div class="alert alert-danger py-3 px-4 d-inline-block text-start shadow-xs">
+                            <strong>Librarian Remarks:</strong> {{ card.rejection_remarks or 'Details could not be verified. Please re-submit accurate information.' }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Update Information & Re-Apply</h5>
+
+                    <form method="POST" action="{{ url_for('student.id_card') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Course & Branch</label>
+                                <input type="text" name="course_branch" class="form-control" value="{{ card.course_branch }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Academic Batch</label>
+                                <input type="text" name="academic_year" class="form-control" value="{{ card.academic_year }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Blood Group</label>
+                                <input type="text" name="blood_group" class="form-control" value="{{ card.blood_group or '' }}" placeholder="e.g. B+">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Date of Birth</label>
+                                <input type="date" name="dob" class="form-control" value="{{ card.dob.strftime('%Y-%m-%d') if card.dob else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Emergency Contact</label>
+                                <input type="tel" name="emergency_contact" class="form-control" value="{{ card.emergency_contact or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Update ID Photo</label>
+                                <input type="file" name="id_photo" class="form-control" accept="image/png, image/jpeg, image/webp">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-dark">Address</label>
+                                <textarea name="address" class="form-control" rows="2">{{ card.address or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-top mt-3 d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                                <i class="bi bi-arrow-repeat me-1"></i> Re-submit Application
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function previewIdPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('photo_preview');
+                if (preview.tagName === 'IMG') {
+                    preview.src = e.target.result;
+                } else {
+                    preview.outerHTML = '<img src="' + e.target.result + '" class="id-card-photo-frame" id="photo_preview">';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function copyUPI() {
+        const text = document.getElementById('upi_id_text').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('UPI ID copied to clipboard: ' + text);
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+        });
+    }
+</script>
+{% endblock %}

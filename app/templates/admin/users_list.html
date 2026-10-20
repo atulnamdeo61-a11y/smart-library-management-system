@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">User & Staff Accounts</h3>
+            <p class="text-muted small mb-0">View registered students, create librarians, and manage system access permissions.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="btn-group">
+                <a href="{{ url_for('admin.users_list', role='all') }}" class="btn btn-sm {% if current_role == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">All Users</a>
+                <a href="{{ url_for('admin.users_list', role='student') }}" class="btn btn-sm {% if current_role == 'student' %}btn-primary{% else %}btn-outline-primary{% endif %}">Students</a>
+                <a href="{{ url_for('admin.users_list', role='librarian') }}" class="btn btn-sm {% if current_role == 'librarian' %}btn-primary{% else %}btn-outline-primary{% endif %}">Librarians</a>
+                <a href="{{ url_for('admin.users_list', role='admin') }}" class="btn btn-sm {% if current_role == 'admin' %}btn-primary{% else %}btn-outline-primary{% endif %}">Admins</a>
+            </div>
+            <a href="{{ url_for('admin.librarian_new') }}" class="btn btn-success btn-sm">
+                <i class="bi bi-person-plus-fill me-1"></i> Add Librarian
+            </a>
+        </div>
+    </div>
+
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Full Name</th>
+                        <th>Email Address</th>
+                        <th>Role</th>
+                        <th>Student / Staff ID</th>
+                        <th>Registered On</th>
+                        <th>Status</th>
+                        <th class="text-end">Account Control</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for u in users %}
+                            <tr>
+                                <td>#{{ u.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ u.full_name }}</div>
+                                    <div class="small text-muted">{{ u.phone or '' }}</div>
+                                </td>
+                                <td><code>{{ u.email }}</code></td>
+                                <td>
+                                    <span class="role-badge role-badge-{{ u.role }}">{{ u.role }}</span>
+                                </td>
+                                <td>{{ u.student_id or '-' }}</td>
+                                <td>{{ u.created_at.strftime('%d-%b-%Y') }}</td>
+                                <td>
+                                    {% if u.is_active %}
+                                        <span class="badge bg-success-subtle text-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger">Deactivated</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if u.id != current_user.id %}
+                                        <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            {% if u.is_active %}
+                                                <button type="submit" class="btn btn-outline-warning btn-sm py-1 px-2" data-confirm="Deactivate this user account?">
+                                                    <i class="bi bi-pause-circle me-1"></i> Deactivate
+                                                </button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-outline-success btn-sm py-1 px-2">
+                                                    <i class="bi bi-play-circle me-1"></i> Activate
+                                                </button>
+                                            {% endif %}
+                                        </form>
+                                    {% else %}
+                                        <span class="small text-muted">Current Admin</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">No users found under this role filter.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

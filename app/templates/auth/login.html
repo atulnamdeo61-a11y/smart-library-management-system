@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Smart Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-5">
+            <div class="smart-card p-4 p-md-5 shadow-md">
+                <div class="text-center mb-4">
+                    <div class="brand-icon-wrapper mb-3" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                        <i class="bi bi-person-lock"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Library Sign In</h3>
+                    <p class="text-muted small">Enter your college credentials to access your dashboard</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label class="form-label" for="email">College Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-envelope"></i>
+                            </span>
+                            {{ form.email(class="form-control border-start-0" + (" is-invalid" if form.email.errors else ""), placeholder="e.g. admin@college.edu or student@college.edu", id="email") }}
+                        </div>
+                        {% for error in form.email.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="password">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-key"></i>
+                            </span>
+                            {{ form.password(class="form-control border-start-0" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••", id="password") }}
+                        </div>
+                        {% for error in form.password.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            {{ form.remember_me(class="form-check-input", id="remember_me") }}
+                            <label class="form-check-label small text-muted" for="remember_me">Keep me logged in</label>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('auth.forgot_password') }}" class="small text-primary fw-semibold text-decoration-none">
+                                <i class="bi bi-question-circle me-1"></i>Forgot Password?
+                            </a>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                        <i class="bi bi-box-arrow-in-right"></i> Sign In
+                    </button>
+
+                    <div class="text-center small text-muted">
+                        Don't have a student account? 
+                        <a href="{{ url_for('auth.register') }}" class="fw-semibold">Register here</a>
+                    </div>
+                </form>
+
+                <!-- Demo Viva Credentials Helper -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="accordion accordion-flush" id="demoAccountsAccordion">
+                        <div class="accordion-item bg-transparent">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed px-0 py-2 bg-transparent text-primary small fw-semibold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#demoAccounts">
+                                    <i class="bi bi-info-circle me-1"></i> Evaluator / Viva Demo Credentials
+                                </button>
+                            </h2>
+                            <div id="demoAccounts" class="accordion-collapse collapse" data-bs-parent="#demoAccountsAccordion">
+                                <div class="accordion-body px-0 py-2 small text-muted">
+                                    <div class="p-2 mb-2 bg-light rounded border">
+                                        <div class="fw-bold text-dark">Administrator</div>
+                                        <div>Email: <code>admin@college.edu</code></div>
+                                        <div>Password: <code>Admin@123</code></div>
+                                    </div>
+                                    <div class="p-2 mb-2 bg-light rounded border">
+                                        <div class="fw-bold text-dark">Librarian</div>
+                                        <div>Email: <code>librarian@college.edu</code></div>
+                                        <div>Password: <code>Librarian@123</code></div>
+                                    </div>
+                                    <div class="p-2 bg-light rounded border">
+                                        <div class="fw-bold text-dark">Student (Demo Overdue & Recs)</div>
+                                        <div>Email: <code>aarav.student@college.edu</code></div>
+                                        <div>Password: <code>Student@123</code></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

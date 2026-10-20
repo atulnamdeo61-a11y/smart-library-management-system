@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings & Profile - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-person-gear text-primary me-2"></i>Account Settings
+            </h2>
+            <p class="text-muted small mb-0">Manage your personal profile details and update account security credentials.</p>
+        </div>
+        <div>
+            {% if current_user.is_admin %}
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            {% elif current_user.is_librarian %}
+                <a href="{{ url_for('librarian.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            {% else %}
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- User Summary Card (Sidebar) -->
+        <div class="col-lg-4">
+            <div class="smart-card p-4 shadow-sm mb-4 text-center">
+                <div class="mb-3 position-relative d-inline-block">
+                    {% if current_user.profile_image %}
+                        <img src="{{ url_for('static', filename=current_user.profile_image) }}" alt="{{ current_user.full_name }}" class="rounded-circle shadow object-fit-cover border border-3 border-primary" style="width: 88px; height: 88px;" id="sidebarAvatar">
+                    {% else %}
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white shadow-sm" style="width: 84px; height: 84px; font-size: 2.2rem; font-weight: 700;" id="sidebarAvatarFallback">
+                            {{ current_user.full_name[0]|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                <h4 class="fw-bold text-dark mb-1">{{ current_user.full_name }}</h4>
+                <div class="text-muted small mb-3">{{ current_user.email }}</div>
+
+                <div class="mb-3">
+                    {% if current_user.is_admin %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">
+                            <i class="bi bi-shield-lock-fill me-1"></i> System Administrator
+                        </span>
+                    {% elif current_user.is_librarian %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
+                            <i class="bi bi-journal-bookmark-fill me-1"></i> Library Staff / Librarian
+                        </span>
+                    {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                            <i class="bi bi-mortarboard-fill me-1"></i> Student Account
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="border-top pt-3 text-start small">
+                    {% if current_user.student_id %}
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted">Student / Roll ID:</span>
+                            <span class="fw-semibold text-dark">{{ current_user.student_id }}</span>
+                        </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Account Status:</span>
+                        <span class="fw-semibold text-success"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Registered On:</span>
+                        <span class="fw-semibold text-dark">{{ current_user.created_at.strftime('%d %b %Y') if current_user.created_at else 'Active' }}</span>
+                    </div>
+                    {% if current_user.phone %}
+                        <div class="d-flex justify-content-between py-1">
+                            <span class="text-muted">Phone:</span>
+                            <span class="fw-semibold text-dark">{{ current_user.phone }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Tips Card -->
+            <div class="smart-card p-3 shadow-sm bg-light-subtle">
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-shield-check text-success me-1"></i> Security Best Practices</h6>
+                <ul class="text-muted small ps-3 mb-0">
+                    <li>Use a strong password with at least 6 characters.</li>
+                    <li>Keep your contact email and phone updated for circulation alerts.</li>
+                    <li>Always sign out when using shared campus laboratory computers.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Form Tabs -->
+        <div class="col-lg-8">
+            <div class="smart-card shadow-sm p-0 overflow-hidden">
+                <!-- Nav Tabs -->
+                <ul class="nav nav-tabs nav-fill border-bottom bg-light px-3 pt-2" id="accountTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold py-3 {% if active_tab == 'profile' %}active{% endif %}" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane" type="button" role="tab" aria-controls="profile-pane" aria-selected="{% if active_tab == 'profile' %}true{% else %}false{% endif %}">
+                            <i class="bi bi-person-lines-fill me-2 text-primary"></i> Edit Profile
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold py-3 {% if active_tab == 'password' %}active{% endif %}" id="password-tab" data-bs-toggle="tab" data-bs-target="#password-pane" type="button" role="tab" aria-controls="password-pane" aria-selected="{% if active_tab == 'password' %}true{% else %}false{% endif %}">
+                            <i class="bi bi-shield-lock me-2 text-warning"></i> Change Password
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content p-4 p-md-5" id="accountTabsContent">
+                    <!-- Tab 1: Edit Profile -->
+                    <div class="tab-pane fade {% if active_tab == 'profile' %}show active{% endif %}" id="profile-pane" role="tabpanel" aria-labelledby="profile-tab">
+                        <div class="mb-4">
+                            <h4 class="fw-bold text-dark mb-1">Personal Profile Details</h4>
+                            <p class="text-muted small">Update your official name, contact email, and phone number for library records.</p>
+                        </div>
+
+                        <form method="POST" action="{{ url_for('auth.profile') }}" enctype="multipart/form-data" novalidate>
+                            {{ profile_form.hidden_tag() }}
+
+                            <!-- Profile Picture / Avatar Upload -->
+                            <div class="mb-4 p-3 bg-light rounded-3 border">
+                                <label class="form-label fw-semibold mb-2" for="profile_image">
+                                    <i class="bi bi-camera me-1 text-primary"></i>Profile Picture / Avatar
+                                </label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="position-relative flex-shrink-0">
+                                        {% if current_user.profile_image %}
+                                            <img src="{{ url_for('static', filename=current_user.profile_image) }}" alt="Preview" class="rounded-circle object-fit-cover shadow-sm border border-2 border-primary" style="width: 72px; height: 72px;" id="avatarPreview">
+                                        {% else %}
+                                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white shadow-sm fw-bold fs-3" style="width: 72px; height: 72px;" id="avatarPreviewPlaceholder">
+                                                {{ current_user.full_name[0]|upper }}
+                                            </div>
+                                            <img src="" alt="Preview" class="rounded-circle object-fit-cover shadow-sm border border-2 border-primary d-none" style="width: 72px; height: 72px;" id="avatarPreview">
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        {{ profile_form.profile_image(class="form-control form-control-sm", id="profile_image", accept="image/png, image/jpeg, image/jpg, image/webp", onchange="previewUserAvatar(this)") }}
+                                        <div class="form-text small text-muted mt-1">Upload JPG, PNG, or WEBP (Max 16MB). A square photo works best.</div>
+                                        {% if current_user.profile_image %}
+                                            <div class="form-check mt-2">
+                                                {{ profile_form.remove_image(class="form-check-input", id="remove_image") }}
+                                                <label class="form-check-label text-danger small fw-semibold" for="remove_image">
+                                                    <i class="bi bi-trash3 me-1"></i> Remove current photo (revert to initials)
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% for error in profile_form.profile_image.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="full_name">Full Name <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                                    {{ profile_form.full_name(class="form-control" + (" is-invalid" if profile_form.full_name.errors else ""), id="full_name", placeholder="Enter your full name") }}
+                                </div>
+                                {% for error in profile_form.full_name.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="email">Email Address <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                                    {{ profile_form.email(class="form-control" + (" is-invalid" if profile_form.email.errors else ""), id="email", placeholder="name@college.edu") }}
+                                </div>
+                                <div class="form-text small text-muted">Official email address used for system login, loan alerts, and fine notifications.</div>
+                                {% for error in profile_form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="phone">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                    {{ profile_form.phone(class="form-control" + (" is-invalid" if profile_form.phone.errors else ""), id="phone", placeholder="+91 98765 43210") }}
+                                </div>
+                                <div class="form-text small text-muted">Optional contact number for emergency circulation desk notices.</div>
+                                {% for error in profile_form.phone.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            {% if current_user.is_student %}
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">Student / Roll ID</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="bi bi-card-heading"></i></span>
+                                        <input type="text" class="form-control bg-light" value="{{ current_user.student_id or 'N/A' }}" disabled readonly>
+                                    </div>
+                                    <div class="form-text small text-muted">Institutional Roll Number verified by college academic administration.</div>
+                                </div>
+                            {% endif %}
+
+                            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-save me-1"></i> Save Profile Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab 2: Change Password -->
+                    <div class="tab-pane fade {% if active_tab == 'password' %}show active{% endif %}" id="password-pane" role="tabpanel" aria-labelledby="password-tab">
+                        <div class="mb-4">
+                            <h4 class="fw-bold text-dark mb-1">Change Account Password</h4>
+                            <p class="text-muted small">Keep your library account safe by using a strong, unique password.</p>
+                        </div>
+
+                        <form method="POST" action="{{ url_for('auth.change_password') }}" novalidate>
+                            {{ password_form.hidden_tag() }}
+
+                            <!-- Current Password -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="current_password">Current Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-shield-lock"></i></span>
+                                    {{ password_form.current_password(class="form-control" + (" is-invalid" if password_form.current_password.errors else ""), id="current_password", placeholder="Enter your current password") }}
+                                    <button class="btn btn-outline-secondary btn-toggle-pw" type="button" data-target="current_password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                {% for error in password_form.current_password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- New Password -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="new_password">New Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-key"></i></span>
+                                    {{ password_form.new_password(class="form-control" + (" is-invalid" if password_form.new_password.errors else ""), id="new_password", placeholder="Minimum 6 characters") }}
+                                    <button class="btn btn-outline-secondary btn-toggle-pw" type="button" data-target="new_password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text small text-muted">Must be at least 6 characters and different from your current password.</div>
+                                {% for error in password_form.new_password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Confirm New Password -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold" for="confirm_new_password">Confirm New Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-check2-circle"></i></span>
+                                    {{ password_form.confirm_new_password(class="form-control" + (" is-invalid" if password_form.confirm_new_password.errors else ""), id="confirm_new_password", placeholder="Re-type new password to confirm") }}
+                                    <button class="btn btn-outline-secondary btn-toggle-pw" type="button" data-target="confirm_new_password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                {% for error in password_form.confirm_new_password.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-shield-check me-1"></i> Update Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Visibility Toggle Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.btn-toggle-pw');
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            if (targetInput) {
+                if (targetInput.type === 'password') {
+                    targetInput.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    targetInput.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            }
+        });
+// Live Avatar Image Preview
+function previewUserAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPreviewPlaceholder');
+            const sidebar = document.getElementById('sidebarAvatar');
+            const sidebarFallback = document.getElementById('sidebarAvatarFallback');
+
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+            }
+            if (placeholder) {
+                placeholder.classList.add('d-none');
+            }
+            if (sidebar) {
+                sidebar.src = e.target.result;
+            } else if (sidebarFallback) {
+                sidebarFallback.innerHTML = `<img src="${e.target.result}" class="rounded-circle object-fit-cover w-100 h-100 shadow border border-3 border-primary">`;
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

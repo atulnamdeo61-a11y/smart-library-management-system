@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Book Catalog - Smart Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Catalog Header & Search Controls -->
+    <div class="smart-card p-4 mb-4 shadow-sm">
+        <div class="row align-items-center g-3">
+            <div class="col-lg-5">
+                <h3 class="fw-bold mb-1">Library Book Catalog</h3>
+                <p class="text-muted small mb-0">Browse through college textbook titles, research volumes, and course references.</p>
+            </div>
+            <div class="col-lg-7">
+                <form method="GET" action="{{ url_for('books.catalog') }}" class="row g-2">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" name="q" value="{{ current_query }}" class="form-control border-start-0" placeholder="Title, author, ISBN..." aria-label="Search">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if current_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="availability" class="form-select">
+                            <option value="all" {% if current_availability == 'all' %}selected{% endif %}>All Stock</option>
+                            <option value="available" {% if current_availability == 'available' %}selected{% endif %}>Available Only</option>
+                            <option value="unavailable" {% if current_availability == 'unavailable' %}selected{% endif %}>Out of Stock</option>
+                        </select>
+                    </div>
+                    <div class="col-12 d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-muted">Sort by:</span>
+                            <select name="sort" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                                <option value="title_asc" {% if current_sort == 'title_asc' %}selected{% endif %}>Title (A-Z)</option>
+                                <option value="title_desc" {% if current_sort == 'title_desc' %}selected{% endif %}>Title (Z-A)</option>
+                                <option value="year_desc" {% if current_sort == 'year_desc' %}selected{% endif %}>Publication Year (Newest)</option>
+                                <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Recently Added</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if current_query or current_category or current_availability != 'all' %}
+                                <a href="{{ url_for('books.catalog') }}" class="btn btn-outline-secondary btn-sm">Clear Filters</a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary btn-sm px-3">Apply Filters</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted small">
+            Showing <strong>{{ books|length }}</strong> of <strong>{{ pagination.total }}</strong> books found
+        </span>
+    </div>
+
+    <!-- Books Grid -->
+    {% if books %}
+        <div class="row g-4 mb-4">
+            {% for book in books %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="smart-card smart-card-interactive h-100 d-flex flex-column">
+                        <div class="book-cover-placeholder position-relative">
+                            <i class="bi bi-journal-text"></i>
+                            <div class="position-absolute top-0 end-0 m-3">
+                                {% if book.is_available %}
+                                    <span class="status-badge status-active">
+                                        <i class="bi bi-check-circle-fill"></i> {{ book.available_copies }} in stock
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-overdue">
+                                        <i class="bi bi-x-circle-fill"></i> Unavailable
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="p-4 d-flex flex-column flex-grow-1">
+                            <span class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.75rem;">
+                                {{ book.category.name }}
+                            </span>
+                            <h5 class="fw-bold mb-1 text-truncate" title="{{ book.title }}">{{ book.title }}</h5>
+                            <p class="text-secondary small mb-2"><i class="bi bi-person me-1"></i>{{ book.author }}</p>
+
+                            <div class="small text-muted mb-3 flex-grow-1">
+                                <div><span class="fw-semibold">ISBN:</span> {{ book.isbn or 'N/A' }}</div>
+                                <div><span class="fw-semibold">Shelf:</span> {{ book.shelf_location or 'Main Library' }}</div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                <a href="{{ url_for('books.qr_view', book_id=book.id) }}" class="btn btn-outline-secondary btn-sm" title="View Printable QR Code">
+                                    <i class="bi bi-qr-code"></i>
+                                </a>
+                                <a href="{{ url_for('books.detail', book_id=book.id) }}" class="btn btn-primary btn-sm px-3">
+                                    Book Details <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if pagination.pages > 1 %}
+            <nav aria-label="Catalog pagination" class="d-flex justify-content-center">
+                <ul class="pagination">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('books.catalog', page=pagination.prev_num, q=current_query, category=current_category, availability=current_availability, sort=current_sort) }}">
+                            &laquo; Previous
+                        </a>
+                    </li>
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if p %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('books.catalog', page=p, q=current_query, category=current_category, availability=current_availability, sort=current_sort) }}">
+                                    {{ p }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('books.catalog', page=pagination.next_num, q=current_query, category=current_category, availability=current_availability, sort=current_sort) }}">
+                            Next &raquo;
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Empty Results State -->
+        <div class="smart-card p-5 text-center my-4">
+            <div class="display-3 text-muted mb-3"><i class="bi bi-search"></i></div>
+            <h4 class="fw-bold mb-2">No Matching Books Found</h4>
+            <p class="text-muted mb-4">
+                We couldn't find any books matching your search query or selected filter criteria. Try broader keywords or clearing your active filters.
+            </p>
+            <a href="{{ url_for('books.catalog') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset Search & Filters
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

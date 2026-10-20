@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Student Registration - Smart Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9 col-lg-6">
+            <div class="smart-card p-4 p-md-5 shadow-md">
+                <div class="text-center mb-4">
+                    <div class="brand-icon-wrapper mb-3" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Student Registration</h3>
+                    <p class="text-muted small">Create your library member account to borrow books and access reading resources</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label" for="full_name">Full Name</label>
+                            {{ form.full_name(class="form-control" + (" is-invalid" if form.full_name.errors else ""), placeholder="e.g. Rahul Sharma", id="full_name") }}
+                            {% for error in form.full_name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="email">College Email Address</label>
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="student@college.edu", id="email") }}
+                            {% for error in form.email.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="student_id">Roll / Student ID</label>
+                            {{ form.student_id(class="form-control" + (" is-invalid" if form.student_id.errors else ""), placeholder="e.g. CS2024012", id="student_id") }}
+                            {% for error in form.student_id.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label" for="phone">Phone Number (Optional)</label>
+                            {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="+91 98765 43210", id="phone") }}
+                            {% for error in form.phone.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="password">Create Password</label>
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Min. 6 characters", id="password") }}
+                            {% for error in form.password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="confirm_password">Confirm Password</label>
+                            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Repeat password", id="confirm_password") }}
+                            {% for error in form.confirm_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                        <i class="bi bi-person-check"></i> Complete Student Registration
+                    </button>
+
+                    <div class="text-center small text-muted">
+                        Already have an account? 
+                        <a href="{{ url_for('auth.login') }}" class="fw-semibold">Sign in here</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

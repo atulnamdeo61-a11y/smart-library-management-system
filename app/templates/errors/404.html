@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="smart-card p-5 shadow-sm">
+                <div class="display-1 fw-bold text-primary mb-3">404</div>
+                <h3 class="fw-bold mb-2">Book or Page Not Found</h3>
+                <p class="text-muted mb-4">
+                    The page or resource you requested could not be located in the library catalog. It may have been moved or removed.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ url_for('books.catalog') }}" class="btn btn-primary">
+                        <i class="bi bi-collection"></i> Browse Catalog
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

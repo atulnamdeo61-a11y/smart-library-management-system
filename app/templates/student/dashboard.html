@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Student Welcome Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Welcome back, {{ current_user.full_name }}!</h2>
+            <div class="text-muted small">
+                Student ID: <span class="fw-semibold text-primary">{{ current_user.student_id or 'CS2023001' }}</span> &bull; 
+                College Email: <span class="fw-semibold text-dark">{{ current_user.email }}</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('books.catalog') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-search me-1"></i> Find Books
+            </a>
+            <a href="{{ url_for('student.preferences') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-heart me-1"></i> My Interests
+            </a>
+            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-person-gear me-1"></i> My Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Smart Overdue Alerts (Section 10 Feature D) -->
+    {% if overdue_alerts %}
+        <div class="overdue-alert-box animate-fade-in mb-4">
+            <div class="d-flex align-items-center gap-2 text-danger fw-bold fs-5 mb-2">
+                <i class="bi bi-exclamation-triangle-fill"></i> Smart Overdue Notice: Immediate Action Required
+            </div>
+            <p class="small text-danger mb-3">
+                You have <strong>{{ overdue_alerts|length }}</strong> overdue loan(s). Overdue fines accrue at ₹2.00 per day. Please return these physical books to the library circulation desk immediately to stop further fine charges.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered bg-white mb-0 small">
+                    <thead class="table-danger text-danger">
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th>Current Fine Accrued</th>
+                            <th>Return Instructions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in overdue_alerts %}
+                            <tr>
+                                <td class="fw-semibold">{{ alert.loan.book.title }}</td>
+                                <td>{{ alert.loan.due_date.strftime('%d-%b-%Y') }}</td>
+                                <td class="text-danger fw-bold">+{{ alert.days }} days</td>
+                                <td class="text-danger fw-bold">{{ alert.fine }}</td>
+                                <td>Visit Library Counter &bull; Desk #2</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Key Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="metric-label">Active Borrowed Books</div>
+                        <div class="metric-number text-primary">{{ active_count }} <span class="text-muted fs-6 fw-normal">/ {{ max_limit }} allowed</span></div>
+                    </div>
+                    <div class="metric-icon-box bg-primary-subtle text-primary">
+                        <i class="bi bi-book-half"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="metric-label">Pending Requests</div>
+                        <div class="metric-number text-warning">{{ pending_requests|length }}</div>
+                    </div>
+                    <div class="metric-icon-box bg-warning-subtle text-warning">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="metric-label">Outstanding Fines</div>
+                        <div class="metric-number {% if total_unpaid_fines != '₹0.00' %}text-danger{% else %}text-success{% endif %}">
+                            {{ total_unpaid_fines }}
+                        </div>
+                    </div>
+                    <div class="metric-icon-box bg-danger-subtle text-danger">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Loans Table -->
+    <div class="smart-card mb-4 shadow-sm">
+        <div class="card-header-styled d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0"><i class="bi bi-journal-arrow-up me-2 text-primary"></i> Currently Borrowed Books</h5>
+            <a href="{{ url_for('student.loans') }}" class="btn btn-outline-primary btn-sm">Full View</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Category</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if active_loans %}
+                        {% for loan in active_loans %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ loan.book.title }}</div>
+                                    <div class="small text-muted">Shelf: {{ loan.book.shelf_location or 'CS Stack' }}</div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ loan.book.category.name }}</span></td>
+                                <td>{{ loan.issue_date.strftime('%d-%b-%Y') }}</td>
+                                <td>
+                                    <div class="fw-semibold {% if loan.is_overdue %}text-danger{% else %}text-dark{% endif %}">
+                                        {{ loan.due_date.strftime('%d-%b-%Y') }}
+                                    </div>
+                                    {% if loan.is_overdue %}
+                                        <span class="badge bg-danger-subtle text-danger small">{{ loan.overdue_days }} days overdue</span>
+                                    {% else %}
+                                        <span class="badge bg-success-subtle text-success small">{{ (loan.due_date - today).days }} days remaining</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if loan.is_overdue %}
+                                        <span class="status-badge status-overdue"><i class="bi bi-alarm-fill"></i> Overdue</span>
+                                    {% else %}
+                                        <span class="status-badge status-active"><i class="bi bi-check-circle-fill"></i> Active</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                You currently have no borrowed books. <a href="{{ url_for('books.catalog') }}">Browse catalog to borrow</a>.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pending Requests List -->
+    {% if pending_requests %}
+        <div class="smart-card mb-4 shadow-sm">
+            <div class="card-header-styled">
+                <h5 class="fw-bold mb-0"><i class="bi bi-hourglass-split me-2 text-warning"></i> Pending Borrow Requests</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table smart-table">
+                    <thead>
+                        <tr>
+                            <th>Requested Book</th>
+                            <th>Requested On</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in pending_requests %}
+                            <tr>
+                                <td class="fw-semibold">{{ req.book.title }}</td>
+                                <td>{{ req.requested_at.strftime('%d-%b-%Y %I:%M %p') }}</td>
+                                <td><span class="status-badge status-pending"><i class="bi bi-clock"></i> Awaiting Staff Approval</span></td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('student.cancel_request', request_id=req.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm="Cancel this borrow request?">
+                                            <i class="bi bi-x-circle me-1"></i> Cancel
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Smart Personalized Recommendations (Section 10 Feature A) -->
+    <div class="smart-card p-4 shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="fw-bold mb-1"><i class="bi bi-stars me-2 text-primary"></i> Recommended For You</h5>
+                <p class="text-muted small mb-0">Algorithmically curated based on your academic interests and borrowing history.</p>
+            </div>
+            <a href="{{ url_for('student.recommendations') }}" class="btn btn-outline-primary btn-sm">See All Recommendations</a>
+        </div>
+
+        {% if recommendations %}
+            <div class="row g-3">
+                {% for item in recommendations %}
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column">
+                            <span class="rec-reason-badge mb-2 text-truncate" title="{{ item.reason }}">
+                                <i class="bi bi-lightbulb-fill"></i> {{ item.reason }}
+                            </span>
+                            <h6 class="fw-bold mb-1 text-truncate" title="{{ item.book.title }}">{{ item.book.title }}</h6>
+                            <p class="small text-muted mb-2">{{ item.book.author }}</p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center pt-2 border-top">
+                                <span class="badge bg-success-subtle text-success small">{{ item.book.available_copies }} in stock</span>
+                                <a href="{{ url_for('books.detail', book_id=item.book.id) }}" class="btn btn-primary btn-sm py-1 px-2">
+                                    View <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-heart fs-2 d-block mb-2 text-muted"></i>
+                <p class="mb-2">Select your favorite subjects to receive smart personalized book recommendations.</p>
+                <a href="{{ url_for('student.preferences') }}" class="btn btn-primary btn-sm">Set Reading Interests</a>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

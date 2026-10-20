@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Librarian Dashboard - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Librarian Circulation Desk</h2>
+            <p class="text-muted small mb-0">Daily library circulation desk operations, book returns, and pending approvals.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('librarian.direct_issue') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Issue Book Directly
+            </a>
+            <a href="{{ url_for('librarian.requests_list') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-inbox me-1"></i> View Requests ({{ metrics.pending_requests }})
+            </a>
+            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-person-gear me-1"></i> Account Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">Active Loans</div>
+                        <div class="metric-number text-primary">{{ metrics.active_loans }}</div>
+                    </div>
+                    <div class="metric-icon-box bg-primary-subtle text-primary"><i class="bi bi-book"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">Pending Requests</div>
+                        <div class="metric-number text-warning">{{ metrics.pending_requests }}</div>
+                    </div>
+                    <div class="metric-icon-box bg-warning-subtle text-warning"><i class="bi bi-hourglass-split"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">Overdue Books</div>
+                        <div class="metric-number text-danger">{{ metrics.overdue_loans }}</div>
+                    </div>
+                    <div class="metric-icon-box bg-danger-subtle text-danger"><i class="bi bi-alarm"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="metric-label">Available Copies</div>
+                        <div class="metric-number text-success">{{ metrics.available_copies }}</div>
+                    </div>
+                    <div class="metric-icon-box bg-success-subtle text-success"><i class="bi bi-check2-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Pending Borrow Requests Action List -->
+        <div class="col-lg-7">
+            <div class="smart-card h-100 shadow-sm">
+                <div class="card-header-styled d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-inbox me-2 text-warning"></i> Pending Student Borrow Requests
+                    </h5>
+                    <a href="{{ url_for('librarian.requests_list') }}" class="btn btn-outline-primary btn-sm">All Requests</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table smart-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Book Title</th>
+                                <th>Requested</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if pending_requests %}
+                                {% for req in pending_requests %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ req.student.full_name }}</div>
+                                            <div class="small text-muted">{{ req.student.student_id or req.student.email }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ req.book.title }}</div>
+                                            <span class="badge bg-light text-muted border small">{{ req.book.available_copies }} in stock</span>
+                                        </td>
+                                        <td class="small">{{ req.requested_at.strftime('%d-%b %I:%M %p') }}</td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex gap-1">
+                                                <form method="POST" action="{{ url_for('librarian.approve_request', request_id=req.id) }}">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-success btn-sm py-1 px-2" title="Approve Request">
+                                                        <i class="bi bi-check-lg"></i> Approve
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ url_for('librarian.reject_request', request_id=req.id) }}">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Reject Request">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        <i class="bi bi-check2-circle fs-3 d-block text-success mb-1"></i>
+                                        No pending borrow requests at this time.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Loans Summary -->
+        <div class="col-lg-5">
+            <div class="smart-card h-100 shadow-sm">
+                <div class="card-header-styled d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-danger">
+                        <i class="bi bi-alarm me-2"></i> Overdue Books Queue
+                    </h5>
+                    <a href="{{ url_for('librarian.overdue_list') }}" class="btn btn-outline-danger btn-sm">Full View</a>
+                </div>
+                <div class="p-3">
+                    {% if overdue_loans %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for loan in overdue_loans %}
+                                <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ loan.book.title }}</div>
+                                        <div class="small text-muted">{{ loan.student.full_name }} ({{ loan.student.student_id }})</div>
+                                        <div class="small text-danger fw-semibold mt-1">
+                                            Due: {{ loan.due_date.strftime('%d-%b-%Y') }} &bull; +{{ loan.overdue_days }} days overdue
+                                        </div>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('librarian.return_book', loan_id=loan.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-primary btn-sm" data-confirm="Record return for this overdue book?">
+                                            <i class="bi bi-box-arrow-in-left me-1"></i> Return
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-check-all fs-2 text-success d-block mb-1"></i>
+                            Zero overdue books currently pending return!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

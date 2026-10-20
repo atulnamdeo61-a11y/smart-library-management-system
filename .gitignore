@@ -1,0 +1,32 @@
+# Python bytecode and virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Environment variables & secrets
+.env
+
+# Database files
+*.db
+*.sqlite
+instance/
+
+# Uploads and generated media
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+app/static/qrcodes/*
+!app/static/qrcodes/.gitkeep
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Overdue Books Management - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1 text-danger"><i class="bi bi-alarm me-2"></i>Overdue Book Loans</h3>
+            <p class="text-muted small mb-0">Active loans that have exceeded their designated due date.</p>
+        </div>
+        <span class="badge bg-danger fs-6 py-2 px-3">{{ loans|length }} Books Overdue</span>
+    </div>
+
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Loan #</th>
+                        <th>Student Name & ID</th>
+                        <th>Book Title</th>
+                        <th>Due Date</th>
+                        <th>Days Overdue</th>
+                        <th>Fine Accrued</th>
+                        <th>Contact Phone</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if loans %}
+                        {% for loan in loans %}
+                            <tr>
+                                <td>#{{ loan.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ loan.student.full_name }}</div>
+                                    <div class="small text-muted">{{ loan.student.student_id or loan.student.email }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ loan.book.title }}</div>
+                                    <div class="small text-muted">{{ loan.book.author }}</div>
+                                </td>
+                                <td class="text-danger fw-semibold">{{ loan.due_date.strftime('%d-%b-%Y') }}</td>
+                                <td>
+                                    <span class="badge bg-danger text-white">+{{ loan.overdue_days }} days</span>
+                                </td>
+                                <td class="fw-bold text-danger">
+                                    ₹{{ "%.2f"|format(loan.fine.calculated_amount if loan.fine else 0) }}
+                                </td>
+                                <td class="small">{{ loan.student.phone or 'Not provided' }}</td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('librarian.return_book', loan_id=loan.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-primary btn-sm" data-confirm="Process return and calculate final fine?">
+                                            <i class="bi bi-box-arrow-in-left me-1"></i> Record Return
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-check-circle fs-2 text-success d-block mb-1"></i>
+                                Excellent! There are currently no overdue loans in the library.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

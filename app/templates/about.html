@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}About - Smart Library Management System{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="smart-card p-4 p-md-5 mb-4 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <span class="brand-icon-wrapper" style="width: 52px; height: 52px; font-size: 1.6rem;">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </span>
+                    <div>
+                        <h2 class="fw-bold mb-0">Smart Library Management System</h2>
+                        <p class="text-muted mb-0">College Computer Science / IT Minor Project Specification & Overview</p>
+                    </div>
+                </div>
+
+                <div class="border-top pt-4">
+                    <h4 class="fw-bold text-primary mb-3"><i class="bi bi-bullseye me-2"></i>1. Project Abstract & Objectives</h4>
+                    <p class="text-secondary leading-relaxed">
+                        The <strong>Smart Library Management System</strong> is an end-to-end full-stack web application designed to digitize and automate college library circulation. It replaces manual paperwork with a centralized relational database, role-based authorization, dynamic inventory stock tracking, and smart features including QR code shelf tagging and personalized book recommendations.
+                    </p>
+
+                    <h4 class="fw-bold text-primary mb-3 mt-4"><i class="bi bi-layers-half me-2"></i>2. 5-Layer Modular Architecture</h4>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <h6 class="fw-bold text-dark"><i class="bi bi-window me-1 text-primary"></i> Presentation Layer</h6>
+                                <p class="small text-muted mb-0">HTML5, CSS3 Variables, Bootstrap 5, Jinja2 template inheritance, Chart.js visualizations.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <h6 class="fw-bold text-dark"><i class="bi bi-cpu me-1 text-primary"></i> Application Layer</h6>
+                                <p class="small text-muted mb-0">Flask Application Factory, Blueprints (Auth, Books, Student, Admin, Librarian), Flask-WTF CSRF protection.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <h6 class="fw-bold text-dark"><i class="bi bi-gear-wide-connected me-1 text-primary"></i> Service Layer</h6>
+                                <p class="small text-muted mb-0">Decoupled business logic: CirculationService, FineService, QRService, RecommendationService, AnalyticsService.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <h6 class="fw-bold text-dark"><i class="bi bi-diagram-3 me-1 text-primary"></i> Data Access Layer</h6>
+                                <p class="small text-muted mb-0">SQLAlchemy ORM models with explicit foreign keys, indexes, unique constraints, and atomic transactions.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <h6 class="fw-bold text-dark"><i class="bi bi-database me-1 text-primary"></i> Database Engine</h6>
+                                <p class="small text-muted mb-0">MySQL 8.0 relational database with normalized schema, audit trails, and migration support.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="fw-bold text-primary mb-3"><i class="bi bi-person-check me-2"></i>3. Role-Based Permissions Matrix</h4>
+                    <div class="table-responsive mb-4">
+                        <table class="table smart-table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Operation</th>
+                                    <th>Administrator</th>
+                                    <th>Librarian</th>
+                                    <th>Student</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Search & Browse Books, Scan QR</td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Submit Borrow Request</td>
+                                    <td><i class="bi bi-dash text-muted"></i></td>
+                                    <td><i class="bi bi-dash text-muted"></i></td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Personalized Recommendations</td>
+                                    <td><i class="bi bi-dash text-muted"></i></td>
+                                    <td><i class="bi bi-dash text-muted"></i></td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Approve Requests & Issue Books</td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Process Book Returns & Record Fines</td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Add / Edit / Safe Delete Books</td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-dash text-muted"></i></td>
+                                    <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Waive Fines & Change System Rules</td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+                                    <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Manage Staff Accounts & Audit Logs</td>
+                                    <td><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+                                    <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4 class="fw-bold text-primary mb-3"><i class="bi bi-lightbulb me-2"></i>4. Smart Algorithms</h4>
+                    <p class="text-secondary mb-2">
+                        <strong>Personalized Recommendation Engine:</strong> Operates directly on the relational database without expensive external paid APIs. Weights student explicit category preferences (5 pts), borrowing history category frequency (2.5 pts/loan), deprioritizes already read books, and incorporates overall college borrow popularity.
+                    </p>
+                    <p class="text-secondary mb-0">
+                        <strong>Indian Rupee Fine Accrual:</strong> Employs date-only interval calculation with configurable grace period (default 0 days) and standard rate (₹2.00 per day), preventing charges prior to due date or after return date.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

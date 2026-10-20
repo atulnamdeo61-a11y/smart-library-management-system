@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Books - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Header & Controls -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Manage Catalog & Book Stock</h3>
+            <p class="text-muted small mb-0">Add new volumes, edit metadata, inspect shelf QR codes, and manage physical inventory.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.categories_list') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-tags me-1"></i> Categories
+            </a>
+            <a href="{{ url_for('admin.book_new') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Add New Book
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="smart-card p-3 mb-4 shadow-sm">
+        <form method="GET" action="{{ url_for('admin.books_list') }}" class="row g-2 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ current_query }}" class="form-control border-start-0" placeholder="Search by title, author, or ISBN...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if current_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                {% if current_query or current_category %}
+                    <a href="{{ url_for('admin.books_list') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Books Table -->
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Book ID</th>
+                        <th>Title & Author</th>
+                        <th>Category</th>
+                        <th>ISBN</th>
+                        <th>Shelf Rack</th>
+                        <th>Total Copies</th>
+                        <th>Available</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if books %}
+                        {% for book in books %}
+                            <tr>
+                                <td>#{{ book.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ book.title }}</div>
+                                    <div class="small text-muted">{{ book.author }}</div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ book.category.name }}</span></td>
+                                <td><code>{{ book.isbn or 'N/A' }}</code></td>
+                                <td><span class="small fw-semibold text-secondary">{{ book.shelf_location or 'CS' }}</span></td>
+                                <td>{{ book.total_copies }}</td>
+                                <td>
+                                    {% if book.available_copies > 0 %}
+                                        <span class="badge bg-success-subtle text-success">{{ book.available_copies }} in stock</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger">0 available</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if book.is_active %}
+                                        <span class="badge bg-success text-white">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary text-white">Deactivated</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a href="{{ url_for('books.qr_view', book_id=book.id) }}" class="btn btn-outline-secondary btn-sm py-1 px-2" title="Print Shelf QR Label">
+                                            <i class="bi bi-qr-code"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin.book_edit', book_id=book.id) }}" class="btn btn-outline-primary btn-sm py-1 px-2" title="Edit Book">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('admin.book_delete', book_id=book.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" data-confirm="Are you sure you want to delete this book? If it has historical loan records, it will be safely deactivated instead." title="Delete Book">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">No books found in the inventory.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+            <div class="p-3 border-top d-flex justify-content-center">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.books_list', page=pagination.prev_num, q=current_query, category=current_category) }}">&laquo;</a>
+                    </li>
+                    {% for p in pagination.iter_pages() %}
+                        {% if p %}
+                            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.books_list', page=p, q=current_query, category=current_category) }}">{{ p }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.books_list', page=pagination.next_num, q=current_query, category=current_category) }}">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

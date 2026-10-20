@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% set prefix = bp_prefix|default('librarian') %}
+
+{% block title %}ID Card Details - {{ card.student.full_name }} - {{ 'Admin' if prefix == 'admin' else 'Librarian' }} Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .id-card-cr80 {
+        width: 100%;
+        max-width: 440px;
+        aspect-ratio: 1.586;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #1e3a8a 100%);
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 15px 30px -10px rgba(15, 23, 42, 0.4);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .id-card-cr80-back {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #172554 100%);
+    }
+    .id-card-photo-frame {
+        width: 76px;
+        height: 92px;
+        border-radius: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.85);
+        object-fit: cover;
+        background-color: #334155;
+    }
+    .card-label {
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .card-val {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #f8fafc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ url_for(prefix ~ '.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for(prefix ~ '.id_cards_list') }}">ID Cards</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ card.card_number }}</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-person-badge text-primary"></i> {{ card.student.full_name }}
+                {% if card.is_approved %}
+                    <span class="badge bg-success fs-6">Active Card</span>
+                {% elif card.status == 'Pending' %}
+                    <span class="badge bg-warning text-dark fs-6">Pending Review</span>
+                {% else %}
+                    <span class="badge bg-danger fs-6">Rejected</span>
+                {% endif %}
+            </h3>
+            <p class="text-muted small mb-0">Card ID: <code class="fw-bold">{{ card.card_number }}</code> &bull; Student Roll: <strong class="text-dark">{{ card.roll_number }}</strong></p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{{ url_for(prefix ~ '.id_cards_list') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Cards List
+            </a>
+            {% if card.is_approved %}
+                <a href="{{ url_for('student.id_card_print') }}" target="_blank" class="btn btn-primary shadow-sm">
+                    <i class="bi bi-printer me-1"></i> Print Official Card
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Visual Card Simulation -->
+        <div class="col-lg-5">
+            <h5 class="fw-bold text-dark mb-3">CR80 Physical Simulation</h5>
+
+            <!-- Card Front -->
+            <div class="id-card-cr80">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-white border-opacity-10 pb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="bg-primary text-white rounded p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px;">
+                            <i class="bi bi-book-half"></i>
+                        </span>
+                        <div>
+                            <div class="fw-bold" style="font-size: 0.8rem; letter-spacing: 0.05em; line-height: 1.1;">SMART COLLEGE LIBRARY</div>
+                            <div style="font-size: 0.58rem; color: #93c5fd; letter-spacing: 0.08em;">STUDENT IDENTITY CARD</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 10pt; color: #fbbf24;"><i class="bi bi-patch-check-fill"></i></div>
+                </div>
+
+                <div class="d-flex gap-3 align-items-center py-2">
+                    {% if card.photo_path %}
+                        <img src="{{ url_for('static', filename=card.photo_path) }}" alt="{{ card.student.full_name }}" class="id-card-photo-frame flex-shrink-0">
+                    {% else %}
+                        <div class="id-card-photo-frame flex-shrink-0 d-flex align-items-center justify-content-center text-light">
+                            <i class="bi bi-person-fill fs-2"></i>
+                        </div>
+                    {% endif %}
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-bold text-white text-truncate" style="font-size: 0.95rem;">
+                            {{ card.student.full_name }}
+                        </div>
+                        <div class="fw-semibold small mb-2 text-truncate" style="color: #60a5fa;">
+                            {{ card.roll_number }}
+                        </div>
+                        <div class="card-label">Course / Branch</div>
+                        <div class="card-val text-truncate" style="font-size: 0.72rem;">{{ card.course_branch }}</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-end border-top border-white border-opacity-10 pt-2">
+                    <div>
+                        <div class="card-label">Card Number</div>
+                        <div class="card-val font-monospace" style="font-size: 0.65rem; color: #e2e8f0;">{{ card.card_number }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="card-label">Valid Thru</div>
+                        <div class="card-val" style="font-size: 0.7rem; color: #4ade80;">
+                            {{ card.expiry_date.strftime('%b %Y') if card.expiry_date else 'Permanent' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Back -->
+            <div class="id-card-cr80 id-card-cr80-back">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-white border-opacity-10 pb-2">
+                    <span class="card-label text-light">Circulation Desk Access Code</span>
+                    <span class="badge bg-success-subtle text-success small py-0 px-2" style="font-size: 0.65rem;">Official</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <div style="font-size: 0.68rem; color: #cbd5e1; max-width: 65%;">
+                        <div class="mb-1"><strong class="text-white">Emergency:</strong> {{ card.emergency_contact or 'N/A' }}</div>
+                        <div class="mb-1 text-truncate"><strong class="text-white">Address:</strong> {{ card.address or 'Campus Resident' }}</div>
+                        <div style="font-size: 0.6rem; color: #94a3b8;">
+                            Scan at circulation desk to instantly authorize loans.
+                        </div>
+                    </div>
+                    <div class="p-1 bg-white rounded flex-shrink-0 shadow-sm">
+                        {% if card.qr_code_path %}
+                            <img src="{{ url_for('static', filename=card.qr_code_path) }}" alt="Scannable QR" style="width: 68px; height: 68px;">
+                        {% else %}
+                            <i class="bi bi-qr-code text-dark" style="font-size: 60px;"></i>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center border-top border-white border-opacity-10 pt-2" style="font-size: 0.62rem; color: #94a3b8;">
+                    <span>Issue: {{ card.issue_date.strftime('%d %b %Y') if card.issue_date else 'Today' }}</span>
+                    <span>Authorized Librarian Seal</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification & Record Details Table -->
+        <div class="col-lg-7">
+            <div class="smart-card p-4 shadow-sm mb-4">
+                <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Student & Verification Record</h5>
+
+                <div class="table-responsive">
+                    <table class="table smart-table mb-0">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted w-35">Student Name</th>
+                                <td class="fw-bold text-dark">{{ card.student.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Student Email</th>
+                                <td>{{ card.student.email }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Roll Number</th>
+                                <td class="fw-semibold text-primary">{{ card.roll_number }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Degree / Branch</th>
+                                <td>{{ card.course_branch }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Academic Batch</th>
+                                <td>{{ card.academic_year }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Blood Group</th>
+                                <td>{{ card.blood_group or 'Not Provided' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Date of Birth</th>
+                                <td>{{ card.dob.strftime('%d %B %Y') if card.dob else 'Not Provided' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Emergency Phone</th>
+                                <td>{{ card.emergency_contact or 'Not Provided' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Address</th>
+                                <td>{{ card.address or 'Not Provided' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Fee Payment</th>
+                                <td>
+                                    <span class="badge {% if card.payment_status in ('Paid', 'Waived') %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ card.payment_status }} ({{ currency_symbol }}{{ "%.2f"|format(card.fee_amount|float) }})
+                                    </span>
+                                    {% if card.payment_reference %}
+                                        <div class="small font-monospace text-muted mt-1">UTR / Ref: <code>{{ card.payment_reference }}</code></div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Issue Date</th>
+                                <td>{{ card.issue_date.strftime('%d %B %Y') if card.issue_date else 'Pending Approval' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Expiry Date</th>
+                                <td class="text-success fw-bold">{{ card.expiry_date.strftime('%d %B %Y') if card.expiry_date else 'Permanent' }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Approved By</th>
+                                <td>{{ card.approver.full_name if card.approver else 'N/A' }}</td>
+                            </tr>
+                            {% if card.rejection_remarks %}
+                                <tr class="table-danger">
+                                    <th class="text-danger">Rejection Remarks</th>
+                                    <td class="text-danger fw-semibold">{{ card.rejection_remarks }}</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex gap-2 justify-content-end">
+                    {% if card.status == 'Pending' %}
+                        <form method="POST" action="{{ url_for(prefix ~ '.id_card_approve', card_id=card.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="validity_years" value="3">
+                            <button type="submit" class="btn btn-success fw-semibold">
+                                <i class="bi bi-check-circle me-1"></i> Approve Card Now
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

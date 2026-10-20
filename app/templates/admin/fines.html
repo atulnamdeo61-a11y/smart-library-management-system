@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Fine Administration - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Fine Administration & Waivers</h3>
+            <p class="text-muted small mb-0">Audit assessed fines, record counter payments, and process administrative waivers.</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('admin.fines_list', status='Unpaid') }}" class="btn btn-sm {% if current_status == 'Unpaid' %}btn-primary{% else %}btn-outline-primary{% endif %}">Outstanding</a>
+            <a href="{{ url_for('admin.fines_list', status='Paid') }}" class="btn btn-sm {% if current_status == 'Paid' %}btn-primary{% else %}btn-outline-primary{% endif %}">Paid</a>
+            <a href="{{ url_for('admin.fines_list', status='Waived') }}" class="btn btn-sm {% if current_status == 'Waived' %}btn-primary{% else %}btn-outline-primary{% endif %}">Waived</a>
+            <a href="{{ url_for('admin.fines_list', status='All') }}" class="btn btn-sm {% if current_status == 'All' %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+        </div>
+    </div>
+
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Fine #</th>
+                        <th>Student Name & ID</th>
+                        <th>Book Title</th>
+                        <th>Assessed</th>
+                        <th>Paid</th>
+                        <th>Outstanding</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if fines %}
+                        {% for fine in fines %}
+                            <tr>
+                                <td>#{{ fine.id }}</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ fine.loan.student.full_name }}</div>
+                                    <div class="small text-muted">{{ fine.loan.student.student_id or fine.loan.student.email }}</div>
+                                </td>
+                                <td>
+                                    <div class="text-dark">{{ fine.loan.book.title }}</div>
+                                    <div class="small text-muted">Loan #{{ fine.loan_id }}</div>
+                                </td>
+                                <td class="fw-bold">₹{{ "%.2f"|format(fine.calculated_amount) }}</td>
+                                <td class="text-success">₹{{ "%.2f"|format(fine.amount_paid) }}</td>
+                                <td class="fw-bold {% if fine.outstanding_amount > 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    ₹{{ "%.2f"|format(fine.outstanding_amount) }}
+                                </td>
+                                <td>
+                                    {% if fine.payment_status == 'Paid' %}
+                                        <span class="status-badge status-active">Paid</span>
+                                    {% elif fine.payment_status == 'Partially Paid' %}
+                                        <span class="status-badge status-pending">Partially Paid</span>
+                                    {% elif fine.payment_status == 'Waived' %}
+                                        <span class="status-badge status-returned">Waived</span>
+                                    {% else %}
+                                        <span class="status-badge status-overdue">Unpaid</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if fine.outstanding_amount > 0 and fine.payment_status != 'Waived' %}
+                                        <div class="d-inline-flex gap-1">
+                                            <!-- Pay Button -->
+                                            <button type="button" class="btn btn-primary btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#payModal{{ fine.id }}" title="Receive Payment">
+                                                <i class="bi bi-cash me-1"></i> Pay
+                                            </button>
+
+                                            <!-- Waive Button (Admin Exclusive) -->
+                                            <button type="button" class="btn btn-outline-warning btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#waiveModal{{ fine.id }}" title="Waive Fine">
+                                                <i class="bi bi-slash-circle me-1"></i> Waive
+                                            </button>
+                                        </div>
+
+                                        <!-- Receive Payment Modal -->
+                                        <div class="modal fade" id="payModal{{ fine.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content text-start">
+                                                    <form method="POST" action="{{ url_for('admin.record_payment', fine_id=fine.id) }}">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fw-bold">Record Fine Payment &bull; Fine #{{ fine.id }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="p-3 bg-light rounded-3 mb-3 small">
+                                                                <div><strong>Student:</strong> {{ fine.loan.student.full_name }} ({{ fine.loan.student.student_id }})</div>
+                                                                <div><strong>Outstanding:</strong> <span class="text-danger fw-bold">₹{{ "%.2f"|format(fine.outstanding_amount) }}</span></div>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label" for="adminAmount{{ fine.id }}">Payment Amount (₹)</label>
+                                                                <input type="number" step="0.01" min="0.01" max="{{ fine.outstanding_amount }}" name="amount" id="adminAmount{{ fine.id }}" value="{{ fine.outstanding_amount }}" class="form-control" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label" for="adminMethod{{ fine.id }}">Payment Method</label>
+                                                                <select name="payment_method" id="adminMethod{{ fine.id }}" class="form-select">
+                                                                    <option value="Cash">Cash at Counter</option>
+                                                                    <option value="UPI / Online Demo">UPI / QR Demo</option>
+                                                                    <option value="College Receipt">College Receipt</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label" for="adminNote{{ fine.id }}">Reference Note</label>
+                                                                <input type="text" name="reference_note" id="adminNote{{ fine.id }}" class="form-control" placeholder="Optional notes">
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-success btn-sm">Record Payment</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Waive Fine Modal -->
+                                        <div class="modal fade" id="waiveModal{{ fine.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content text-start">
+                                                    <form method="POST" action="{{ url_for('admin.waive_fine', fine_id=fine.id) }}">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fw-bold text-warning">Waive Overdue Fine &bull; Fine #{{ fine.id }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="small text-muted mb-3">
+                                                                Are you sure you want to officially waive the fine of <strong>₹{{ "%.2f"|format(fine.outstanding_amount) }}</strong> for <strong>{{ fine.loan.student.full_name }}</strong>? This action will be recorded in the audit trail.
+                                                            </p>
+                                                            <label class="form-label" for="reason{{ fine.id }}">Official Reason for Waiver:</label>
+                                                            <textarea name="reason" id="reason{{ fine.id }}" class="form-control" rows="3" required placeholder="e.g. Medical emergency certificate verified / Department head authorization">Verified authorized exception</textarea>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-warning btn-sm">Confirm Fine Waiver</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">Settled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">No fine records found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

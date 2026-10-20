@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Borrow Requests - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Student Book Borrow Requests</h3>
+            <p class="text-muted small mb-0">Review student requests, check current inventory stock, and approve or reject.</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('librarian.requests_list', status='Pending') }}" class="btn btn-sm {% if current_status == 'Pending' %}btn-primary{% else %}btn-outline-primary{% endif %}">Pending Only</a>
+            <a href="{{ url_for('librarian.requests_list', status='Approved') }}" class="btn btn-sm {% if current_status == 'Approved' %}btn-primary{% else %}btn-outline-primary{% endif %}">Approved</a>
+            <a href="{{ url_for('librarian.requests_list', status='Rejected') }}" class="btn btn-sm {% if current_status == 'Rejected' %}btn-primary{% else %}btn-outline-primary{% endif %}">Rejected</a>
+            <a href="{{ url_for('librarian.requests_list', status='All') }}" class="btn btn-sm {% if current_status == 'All' %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+        </div>
+    </div>
+
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Student Details</th>
+                        <th>Requested Book</th>
+                        <th>Available Stock</th>
+                        <th>Requested On</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if requests %}
+                        {% for req in requests %}
+                            <tr>
+                                <td>#{{ req.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ req.student.full_name }}</div>
+                                    <div class="small text-muted">{{ req.student.student_id or req.student.email }}</div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('books.detail', book_id=req.book.id) }}" class="fw-semibold text-dark">
+                                        {{ req.book.title }}
+                                    </a>
+                                    <div class="small text-muted">{{ req.book.author }}</div>
+                                </td>
+                                <td>
+                                    {% if req.book.available_copies > 0 %}
+                                        <span class="badge bg-success-subtle text-success">{{ req.book.available_copies }} in stock</span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger">0 in stock</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ req.requested_at.strftime('%d-%b-%Y %I:%M %p') }}</td>
+                                <td>
+                                    {% if req.status == 'Pending' %}
+                                        <span class="status-badge status-pending"><i class="bi bi-clock"></i> Pending</span>
+                                    {% elif req.status == 'Approved' %}
+                                        <span class="status-badge status-active"><i class="bi bi-check-circle"></i> Approved</span>
+                                    {% elif req.status == 'Cancelled' %}
+                                        <span class="status-badge status-returned">Cancelled</span>
+                                    {% else %}
+                                        <span class="status-badge status-rejected"><i class="bi bi-x-circle"></i> Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if req.status == 'Pending' %}
+                                        <div class="d-inline-flex gap-1">
+                                            <form method="POST" action="{{ url_for('librarian.approve_request', request_id=req.id) }}">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-success btn-sm" {% if req.book.available_copies <= 0 %}disabled title="No copies available"{% endif %}>
+                                                    <i class="bi bi-check-lg"></i> Approve
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal{{ req.id }}">
+                                                <i class="bi bi-x-lg"></i> Reject
+                                            </button>
+                                        </div>
+
+                                        <!-- Reject Remarks Modal -->
+                                        <div class="modal fade" id="rejectModal{{ req.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content text-start">
+                                                    <form method="POST" action="{{ url_for('librarian.reject_request', request_id=req.id) }}">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fw-bold">Reject Borrow Request #{{ req.id }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="small text-muted mb-2">Student: <strong>{{ req.student.full_name }}</strong> &bull; Book: <strong>{{ req.book.title }}</strong></p>
+                                                            <label class="form-label" for="remarks{{ req.id }}">Reason for rejection:</label>
+                                                            <textarea name="remarks" id="remarks{{ req.id }}" class="form-control" rows="3" required placeholder="e.g. Incomplete verification, reservation reserved for faculty, etc.">Book unavailable or limit exceeded.</textarea>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-danger btn-sm">Confirm Rejection</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="small text-muted">Processed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">No requests found matching this status filter.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

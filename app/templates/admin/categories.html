@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Categories - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Academic Categories</h3>
+            <p class="text-muted small mb-0">Organize library catalog subjects for targeted browsing and recommendations.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- New Category Form -->
+        <div class="col-lg-4">
+            <div class="smart-card p-4 shadow-sm">
+                <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle text-primary me-2"></i> Add New Category</h5>
+                <form method="POST" action="{{ url_for('admin.categories_list') }}">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label class="form-label" for="name">Category Name</label>
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g. Cybersecurity", id="name") }}
+                        {% for err in form.name.errors %}
+                            <div class="text-danger small mt-1">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="description">Description</label>
+                        {{ form.description(class="form-control", rows="3", placeholder="Brief scope of topics covered...", id="description") }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save me-1"></i> Create Category
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Categories List Table -->
+        <div class="col-lg-8">
+            <div class="smart-card shadow-sm">
+                <div class="card-header-styled">
+                    <h5 class="fw-bold mb-0">Active Academic Categories ({{ categories|length }})</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table smart-table">
+                        <thead>
+                            <tr>
+                                <th>Category ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Total Books</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if categories %}
+                                {% for cat in categories %}
+                                    <tr>
+                                        <td>#{{ cat.id }}</td>
+                                        <td class="fw-bold text-dark">{{ cat.name }}</td>
+                                        <td class="small text-muted">{{ cat.description or '-' }}</td>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary border">
+                                                {{ cat.books.count() }} books
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No categories created yet.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

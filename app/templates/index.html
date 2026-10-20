@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Library Management System - Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Banner -->
+    <div class="hero-gradient mb-5 shadow-lg">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <div class="d-flex gap-2 mb-3">
+                    <span class="hero-stats-pill">
+                        <i class="bi bi-patch-check-fill text-warning"></i> College Minor Project
+                    </span>
+                    <span class="hero-stats-pill">
+                        <i class="bi bi-qr-code-scan"></i> QR Enabled
+                    </span>
+                </div>
+                <h1 class="display-5 text-white fw-bold mb-3">
+                    Modern College Library, <br>
+                    <span style="color: #38bdf8;">Simplified & Automated.</span>
+                </h1>
+                <p class="lead text-light mb-4" style="opacity: 0.9;">
+                    Search academic books, reserve physical copies, track loans and due dates, and discover personalized book recommendations.
+                </p>
+
+                <!-- Catalog Search Box -->
+                <form action="{{ url_for('books.catalog') }}" method="GET" class="d-flex gap-2 bg-white p-2 rounded-3 shadow-md" style="max-width: 580px;">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-0 text-muted">
+                            <i class="bi bi-search fs-5"></i>
+                        </span>
+                        <input type="text" name="q" class="form-control border-0 shadow-none ps-0" placeholder="Search by title, author, ISBN, or topic..." aria-label="Search">
+                    </div>
+                    <button class="btn btn-primary px-4" type="submit">Search</button>
+                </form>
+            </div>
+
+            <div class="col-lg-5 text-center d-none d-lg-block">
+                <div class="p-4 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 backdrop-blur">
+                    <i class="bi bi-journal-bookmark-fill display-1 text-warning mb-3 d-block"></i>
+                    <h4 class="text-white fw-bold mb-2">Automated Circulation</h4>
+                    <p class="text-light small mb-3">Zero paper records. Transparent due date calculation with date-only Indian Rupee fine accounting.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('books.catalog') }}" class="btn btn-light btn-sm fw-bold">Explore Catalog</a>
+                        {% if not current_user.is_authenticated %}
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-sm">Member Login</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Highlights -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="smart-card p-4 h-100 text-center">
+                <div class="metric-icon-box bg-primary-subtle text-primary mx-auto mb-3">
+                    <i class="bi bi-qr-code"></i>
+                </div>
+                <h5 class="fw-bold mb-2">QR Identification</h5>
+                <p class="text-muted small mb-0">Every book copy has a unique QR code for instant catalog lookups and printable shelf labels.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="smart-card p-4 h-100 text-center">
+                <div class="metric-icon-box bg-info-subtle text-info mx-auto mb-3">
+                    <i class="bi bi-magic"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Smart Recommender</h5>
+                <p class="text-muted small mb-0">Recommends titles based on student category preferences, reading history, and college popularity.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="smart-card p-4 h-100 text-center">
+                <div class="metric-icon-box bg-warning-subtle text-warning mx-auto mb-3">
+                    <i class="bi bi-alarm"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Overdue Alerts</h5>
+                <p class="text-muted small mb-0">Automatic overdue tracking at ₹2/day rate with in-app reminders and payment receipts.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="smart-card p-4 h-100 text-center">
+                <div class="metric-icon-box bg-success-subtle text-success mx-auto mb-3">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Role Permissions</h5>
+                <p class="text-muted small mb-0">Three distinct roles for Administrator, Librarian, and Student with backend authorization.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Strip -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold mb-0">Explore by Category</h3>
+        <a href="{{ url_for('books.catalog') }}" class="btn btn-outline-primary btn-sm">View All Books <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mb-5">
+        {% for cat in categories %}
+            <a href="{{ url_for('books.catalog', category=cat.id) }}" class="btn btn-light border py-2 px-3 rounded-pill text-dark small fw-semibold">
+                <i class="bi bi-tag me-1 text-primary"></i> {{ cat.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Featured Books Showcase -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">Featured Academic Books</h3>
+                <p class="text-muted mb-0">Standard textbooks and engineering references available in the library.</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            {% for book in featured_books %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="smart-card smart-card-interactive h-100 d-flex flex-column">
+                        <div class="book-cover-placeholder position-relative">
+                            <i class="bi bi-book"></i>
+                            <div class="position-absolute top-0 end-0 m-3">
+                                {% if book.is_available %}
+                                    <span class="status-badge status-active">
+                                        <i class="bi bi-check-circle-fill"></i> {{ book.available_copies }} Available
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-overdue">
+                                        <i class="bi bi-x-circle-fill"></i> Unavailable
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="p-4 d-flex flex-column flex-grow-1">
+                            <div class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.75rem;">
+                                {{ book.category.name }}
+                            </div>
+                            <h5 class="fw-bold mb-1 text-truncate" title="{{ book.title }}">{{ book.title }}</h5>
+                            <p class="text-secondary small mb-2"><i class="bi bi-person me-1"></i>{{ book.author }}</p>
+                            <p class="text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                {{ book.description or "Standard university library edition." }}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-geo-alt me-1 text-muted"></i>{{ book.shelf_location or 'Main Stack' }}
+                                </span>
+                                <a href="{{ url_for('books.detail', book_id=book.id) }}" class="btn btn-primary btn-sm">
+                                    View Details <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

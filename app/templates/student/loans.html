@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}My Borrowed Books - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">My Active Book Loans</h3>
+            <p class="text-muted small mb-0">Track your borrowed copies, remaining days, and return deadlines.</p>
+        </div>
+        <a href="{{ url_for('books.catalog') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-collection me-1"></i> Browse Catalog
+        </a>
+    </div>
+
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Book Information</th>
+                        <th>Category</th>
+                        <th>Issued By</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Days Remaining</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if loans %}
+                        {% for loan in loans %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ loan.book.title }}</div>
+                                    <div class="small text-muted">Author: {{ loan.book.author }} &bull; ISBN: {{ loan.book.isbn or 'N/A' }}</div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ loan.book.category.name }}</span></td>
+                                <td class="small">{{ loan.issuer.full_name }}</td>
+                                <td>{{ loan.issue_date.strftime('%d-%b-%Y') }}</td>
+                                <td class="fw-semibold {% if loan.is_overdue %}text-danger{% else %}text-dark{% endif %}">
+                                    {{ loan.due_date.strftime('%d-%b-%Y') }}
+                                </td>
+                                <td>
+                                    {% if loan.is_overdue %}
+                                        <span class="badge bg-danger text-white">{{ loan.overdue_days }} days overdue</span>
+                                    {% else %}
+                                        <span class="badge bg-success-subtle text-success">{{ (loan.due_date - today).days }} days left</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if loan.is_overdue %}
+                                        <span class="status-badge status-overdue"><i class="bi bi-alarm-fill"></i> Overdue (Fine applies)</span>
+                                    {% else %}
+                                        <span class="status-badge status-active"><i class="bi bi-check-circle-fill"></i> Active</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-book fs-1 d-block mb-2 text-muted"></i>
+                                You have no active book loans at this moment.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

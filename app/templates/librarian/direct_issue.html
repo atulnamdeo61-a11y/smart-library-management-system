@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Direct Book Issue - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="smart-card p-4 p-md-5 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <span class="brand-icon-wrapper" style="width: 52px; height: 52px; font-size: 1.5rem;">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </span>
+                    <div>
+                        <h3 class="fw-bold mb-0">Direct Book Issue</h3>
+                        <p class="text-muted small mb-0">Issue a physical book directly at the counter by entering student roll number or email</p>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('librarian.direct_issue') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Student Identifier -->
+                    <div class="mb-4">
+                        <label class="form-label" for="student_identifier">Student Roll ID or College Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                            <input type="text" name="student_identifier" id="student_identifier" list="studentList" class="form-control" placeholder="e.g. CS2023001 or aarav.student@college.edu" required>
+                        </div>
+                        <datalist id="studentList">
+                            {% for s in students %}
+                                <option value="{{ s.student_id or s.email }}">{{ s.full_name }} ({{ s.email }})</option>
+                            {% endfor %}
+                        </datalist>
+                        <span class="small text-muted">Type to select an active registered student.</span>
+                    </div>
+
+                    <!-- Book Selection -->
+                    <div class="mb-4">
+                        <label class="form-label" for="book_id">Select Book from Inventory</label>
+                        <select name="book_id" id="book_id" class="form-select" required>
+                            <option value="">-- Choose an available book --</option>
+                            {% for b in available_books %}
+                                <option value="{{ b.id }}">
+                                    {{ b.title }} by {{ b.author }} ({{ b.available_copies }} available) [{{ b.shelf_location or 'CS' }}]
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Custom Borrow Duration -->
+                    <div class="mb-4">
+                        <label class="form-label" for="borrow_days">Borrow Duration (Days)</label>
+                        <input type="number" name="borrow_days" id="borrow_days" value="14" min="1" max="60" class="form-control" style="max-width: 200px;">
+                        <span class="small text-muted">Default borrowing cycle is 14 days.</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{{ url_for('librarian.loans_list') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4 py-2">
+                            <i class="bi bi-check2-circle me-1"></i> Issue Book Now
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

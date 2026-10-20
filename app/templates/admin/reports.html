@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Library Analytics & Reports - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Header with Print Button -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Library Circulation & Inventory Report</h3>
+            <p class="text-muted small mb-0">Generated on {{ today.strftime('%d-%B-%Y') }} for College Academic Accreditation & Audit.</p>
+        </div>
+        <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print / Save PDF
+        </button>
+    </div>
+
+    <!-- Executive Summary Card -->
+    <div class="smart-card p-4 mb-4 shadow-sm">
+        <h5 class="fw-bold mb-3 border-bottom pb-2">1. Executive Operations Summary</h5>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3">
+                    <div class="small text-muted">Total Physical Volumes</div>
+                    <div class="fs-4 fw-bold text-dark">{{ metrics.total_physical_copies }}</div>
+                    <div class="small text-muted">{{ metrics.total_unique_books }} distinct titles</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3">
+                    <div class="small text-muted">Available on Shelves</div>
+                    <div class="fs-4 fw-bold text-success">{{ metrics.available_copies }}</div>
+                    <div class="small text-muted">{{ metrics.borrowed_copies }} copies currently loaned</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3">
+                    <div class="small text-muted">Active Circulation Loans</div>
+                    <div class="fs-4 fw-bold text-primary">{{ metrics.active_loans }}</div>
+                    <div class="small text-danger">{{ metrics.overdue_loans }} overdue loans</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3">
+                    <div class="small text-muted">Financial Fine Recovery</div>
+                    <div class="fs-4 fw-bold text-success">{{ metrics.formatted_total_paid }}</div>
+                    <div class="small text-danger">{{ metrics.formatted_outstanding_fines }} balance due</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown Table -->
+    <div class="smart-card shadow-sm mb-4">
+        <div class="card-header-styled">
+            <h5 class="fw-bold mb-0">2. Academic Department / Category Distribution</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table smart-table table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Department / Category</th>
+                        <th>Unique Titles</th>
+                        <th>Total Physical Volumes</th>
+                        <th>Available Copies</th>
+                        <th>Circulation Utilization</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in category_stats %}
+                        <tr>
+                            <td class="fw-semibold text-dark">{{ row.name }}</td>
+                            <td>{{ row.book_count }}</td>
+                            <td>{{ row.total_copies }}</td>
+                            <td>{{ row.available_copies }}</td>
+                            <td>
+                                {% set util = ((row.total_copies - row.available_copies) / row.total_copies * 100) if row.total_copies > 0 else 0 %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ util }}%;"></div>
+                                    </div>
+                                    <span class="small text-muted">{{ "%.1f"|format(util) }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Monthly Circulation Volumes -->
+    <div class="smart-card shadow-sm">
+        <div class="card-header-styled">
+            <h5 class="fw-bold mb-0">3. Historical 6-Month Circulation Volume</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table smart-table table-bordered mb-0">
+                <thead>
+                    <tr>
+                        {% for m_label in chart_data.month_labels %}
+                            <th class="text-center">{{ m_label }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        {% for m_count in chart_data.month_counts %}
+                            <td class="text-center fs-5 fw-bold text-primary">{{ m_count }} loans</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

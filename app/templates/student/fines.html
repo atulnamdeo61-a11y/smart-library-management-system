@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}My Library Fines - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="mb-4">
+        <h3 class="fw-bold mb-1">My Library Fines & Payment History</h3>
+        <p class="text-muted small mb-0">Transparent accounting of overdue fines calculated at ₹2.00 per overdue day.</p>
+    </div>
+
+    <!-- Fine Balance Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="metric-label">Total Fines Assessed</div>
+                <div class="metric-number text-dark">{{ total_assessed }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="metric-label">Total Fines Paid</div>
+                <div class="metric-number text-success">{{ total_paid }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="metric-label">Total Outstanding Balance</div>
+                <div class="metric-number {% if total_outstanding != '₹0.00' %}text-danger{% else %}text-success{% endif %}">
+                    {{ total_outstanding }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fine Records Table -->
+    <div class="smart-card shadow-sm">
+        <div class="card-header-styled">
+            <h5 class="fw-bold mb-0"><i class="bi bi-receipt me-2 text-primary"></i> Fine Statement Breakdown</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Loaned Book</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Overdue Days</th>
+                        <th>Fine Assessed</th>
+                        <th>Amount Paid</th>
+                        <th>Balance Due</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if loans_with_fines %}
+                        {% for loan in loans_with_fines %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ loan.book.title }}</div>
+                                    <div class="small text-muted">Rate: ₹{{ loan.fine_rate_snapshot }}/day</div>
+                                </td>
+                                <td>{{ loan.due_date.strftime('%d-%b-%Y') }}</td>
+                                <td>{{ loan.return_date.strftime('%d-%b-%Y') if loan.return_date else 'Still Active' }}</td>
+                                <td class="fw-bold {% if loan.overdue_days > 0 %}text-danger{% endif %}">
+                                    {{ loan.overdue_days }} days
+                                </td>
+                                <td>₹{{ "%.2f"|format(loan.fine.calculated_amount) }}</td>
+                                <td class="text-success">₹{{ "%.2f"|format(loan.fine.amount_paid) }}</td>
+                                <td class="fw-bold {% if loan.fine.outstanding_amount > 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    ₹{{ "%.2f"|format(loan.fine.outstanding_amount) }}
+                                </td>
+                                <td>
+                                    {% if loan.fine.payment_status == 'Paid' %}
+                                        <span class="status-badge status-active"><i class="bi bi-check-all"></i> Paid</span>
+                                    {% elif loan.fine.payment_status == 'Partially Paid' %}
+                                        <span class="status-badge status-pending">Partially Paid</span>
+                                    {% elif loan.fine.payment_status == 'Waived' %}
+                                        <span class="status-badge status-returned">Waived</span>
+                                    {% elif loan.fine.payment_status == 'No Fine' %}
+                                        <span class="badge bg-light text-muted">No Fine</span>
+                                    {% else %}
+                                        <span class="status-badge status-overdue"><i class="bi bi-exclamation-circle"></i> Unpaid</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-emoji-smile fs-1 d-block mb-2 text-success"></i>
+                                Great job! You have zero fines or penalties on your account.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Circulation Settings - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="smart-card p-4 p-md-5 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <span class="brand-icon-wrapper" style="width: 52px; height: 52px; font-size: 1.5rem;">
+                        <i class="bi bi-sliders"></i>
+                    </span>
+                    <div>
+                        <h3 class="fw-bold mb-0">Circulation & Fine Rules</h3>
+                        <p class="text-muted small mb-0">Configure library borrowing limits, loan cycles, and overdue penalty rates</p>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('admin.settings') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label" for="borrow_days">Default Borrowing Duration (Days)</label>
+                        <div class="input-group">
+                            <input type="number" name="borrow_days" id="borrow_days" value="{{ borrow_days }}" min="1" max="90" class="form-control" required>
+                            <span class="input-group-text bg-light text-muted">Days</span>
+                        </div>
+                        <span class="small text-muted">Standard period a student may hold a book before it becomes overdue (e.g., 14 days).</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="max_loans">Maximum Active Loans Per Student</label>
+                        <div class="input-group">
+                            <input type="number" name="max_loans" id="max_loans" value="{{ max_loans }}" min="1" max="10" class="form-control" required>
+                            <span class="input-group-text bg-light text-muted">Books</span>
+                        </div>
+                        <span class="small text-muted">Hard threshold preventing student over-borrowing (default: 3 books).</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="fine_rate">Overdue Fine Rate</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted">{{ currency_symbol }}</span>
+                            <input type="number" step="0.50" min="0" max="100" name="fine_rate" id="fine_rate" value="{{ fine_rate }}" class="form-control" required>
+                            <span class="input-group-text bg-light text-muted">per day</span>
+                        </div>
+                        <span class="small text-muted">Indian Rupee daily charge applied after due date without return (default: ₹2.00/day).</span>
+                    </div>
+
+                    <h5 class="fw-bold mt-4 mb-3 text-primary d-flex align-items-center gap-2">
+                        <i class="bi bi-qr-code-scan"></i> Student ID Card & UPI QR Configuration
+                    </h5>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="id_card_fee">Student ID Card Fee</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted">{{ currency_symbol }}</span>
+                            <input type="number" step="1.00" min="0" max="1000" name="id_card_fee" id="id_card_fee" value="{{ id_card_fee }}" class="form-control" required>
+                        </div>
+                        <span class="small text-muted">Fee amount encoded into the dynamic UPI Payment QR code for student ID card generation (e.g. ₹50.00).</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="upi_id">Merchant / College UPI ID (VPA)</label>
+                        <input type="text" name="upi_id" id="upi_id" value="{{ upi_id }}" class="form-control" placeholder="smartlibrary@upi" required>
+                        <span class="small text-muted">The Virtual Payment Address receiving fees via Google Pay, PhonePe, Paytm, or BHIM.</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="upi_payee_name">UPI Payee Business Name</label>
+                        <input type="text" name="upi_payee_name" id="upi_payee_name" value="{{ upi_payee_name }}" class="form-control" placeholder="Smart College Library" required>
+                        <span class="small text-muted">Display name presented in the student's UPI banking app when scanning the QR code.</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                            Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

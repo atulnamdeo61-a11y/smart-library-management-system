@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Circulation Loans - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Circulation & Book Loans Registry</h3>
+            <p class="text-muted small mb-0">Master record of all current and historical book circulation operations.</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('admin.loans_list', status='Active') }}" class="btn btn-sm {% if current_status == 'Active' %}btn-primary{% else %}btn-outline-primary{% endif %}">Active Loans</a>
+            <a href="{{ url_for('admin.loans_list', status='Returned') }}" class="btn btn-sm {% if current_status == 'Returned' %}btn-primary{% else %}btn-outline-primary{% endif %}">Returned</a>
+            <a href="{{ url_for('admin.loans_list', status='All') }}" class="btn btn-sm {% if current_status == 'All' %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+        </div>
+    </div>
+
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table">
+                <thead>
+                    <tr>
+                        <th>Loan ID</th>
+                        <th>Student Information</th>
+                        <th>Book Information</th>
+                        <th>Issued By</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if loans %}
+                        {% for loan in loans %}
+                            <tr>
+                                <td>#{{ loan.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ loan.student.full_name }}</div>
+                                    <div class="small text-muted">{{ loan.student.student_id or loan.student.email }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ loan.book.title }}</div>
+                                    <div class="small text-muted">Shelf: {{ loan.book.shelf_location or 'CS' }}</div>
+                                </td>
+                                <td class="small">{{ loan.issuer.full_name }}</td>
+                                <td>{{ loan.issue_date.strftime('%d-%b-%Y') }}</td>
+                                <td class="fw-semibold {% if loan.is_overdue %}text-danger{% endif %}">
+                                    {{ loan.due_date.strftime('%d-%b-%Y') }}
+                                    {% if loan.is_overdue %}
+                                        <div class="badge bg-danger-subtle text-danger small">+{{ loan.overdue_days }}d overdue</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ loan.return_date.strftime('%d-%b-%Y') if loan.return_date else '-' }}</td>
+                                <td>
+                                    {% if loan.status == 'Active' %}
+                                        {% if loan.is_overdue %}
+                                            <span class="status-badge status-overdue">Overdue</span>
+                                        {% else %}
+                                            <span class="status-badge status-active">Active</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="status-badge status-returned">Returned</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if loan.status == 'Active' %}
+                                        <form method="POST" action="{{ url_for('librarian.return_book', loan_id=loan.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-outline-primary btn-sm" data-confirm="Process return for '{{ loan.book.title }}'?">
+                                                <i class="bi bi-box-arrow-in-left me-1"></i> Return
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="small text-muted"><i class="bi bi-check2 text-success"></i> Returned</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">No circulation records found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

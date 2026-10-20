@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% set prefix = bp_prefix|default('librarian') %}
+
+{% block title %}Student ID Cards - {{ 'Admin' if prefix == 'admin' else 'Librarian' }} Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Top Action & Title Bar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-person-vcard text-primary"></i> Student Library ID Cards
+            </h3>
+            <p class="text-muted small mb-0">Review student applications, verify UPI fee payments, and issue official scannable CR80 smart cards</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for(prefix ~ '.id_card_create') }}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> Issue New ID Card
+            </a>
+        </div>
+    </div>
+
+    <!-- Analytics / Stat Counters -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small fw-semibold">Total Applications</span>
+                    <i class="bi bi-collection text-primary fs-5"></i>
+                </div>
+                <div class="fs-3 fw-bold text-dark">{{ total_count }}</div>
+                <span class="small text-muted">All registered cards</span>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small fw-semibold">Pending Approval</span>
+                    <i class="bi bi-hourglass-split text-warning fs-5"></i>
+                </div>
+                <div class="fs-3 fw-bold text-warning">{{ pending_count }}</div>
+                <span class="small text-muted">Awaiting staff review</span>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small fw-semibold">Approved & Active</span>
+                    <i class="bi bi-patch-check text-success fs-5"></i>
+                </div>
+                <div class="fs-3 fw-bold text-success">{{ approved_count }}</div>
+                <span class="small text-muted">Circulating cards</span>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="stat-card shadow-sm p-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small fw-semibold">Fees Collected</span>
+                    <i class="bi bi-cash-coin text-info fs-5"></i>
+                </div>
+                <div class="fs-3 fw-bold text-info">{{ currency_symbol }}{{ "%.2f"|format(total_fees_collected|float) }}</div>
+                <span class="small text-muted">Via dynamic UPI & cash</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="smart-card p-3 mb-4 shadow-sm">
+        <form method="GET" action="{{ url_for(prefix ~ '.id_cards_list') }}" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search by student name, roll no, card ID, or UTR..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="All" {% if current_status == 'All' %}selected{% endif %}>Approval Status: All</option>
+                    <option value="Pending" {% if current_status == 'Pending' %}selected{% endif %}>Pending Review</option>
+                    <option value="Approved" {% if current_status == 'Approved' %}selected{% endif %}>Approved / Issued</option>
+                    <option value="Rejected" {% if current_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="payment" class="form-select" onchange="this.form.submit()">
+                    <option value="All" {% if current_payment == 'All' %}selected{% endif %}>Payment Status: All</option>
+                    <option value="Paid" {% if current_payment == 'Paid' %}selected{% endif %}>Paid (UPI/Cash)</option>
+                    <option value="Pending" {% if current_payment == 'Pending' %}selected{% endif %}>Unpaid / Pending</option>
+                    <option value="Waived" {% if current_payment == 'Waived' %}selected{% endif %}>Fee Waived</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-outline-primary w-100" title="Filter"><i class="bi bi-funnel"></i></button>
+                {% if search_query or current_status != 'All' or current_payment != 'All' %}
+                    <a href="{{ url_for(prefix ~ '.id_cards_list') }}" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-circle"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="smart-card shadow-sm">
+        <div class="table-responsive">
+            <table class="table smart-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Roll No & Course</th>
+                        <th>Card Number</th>
+                        <th>UPI / Fee Payment</th>
+                        <th>Application Status</th>
+                        <th>Applied On</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if cards %}
+                        {% for card in cards %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if card.photo_path %}
+                                            <img src="{{ url_for('static', filename=card.photo_path) }}" alt="{{ card.student.full_name }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;">
+                                        {% else %}
+                                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                                {{ card.student.full_name[0]|upper }}
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ card.student.full_name }}</div>
+                                            <div class="text-muted small">{{ card.student.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold text-primary">{{ card.roll_number }}</div>
+                                    <div class="text-muted small text-truncate" style="max-width: 180px;">{{ card.course_branch }} ({{ card.academic_year }})</div>
+                                </td>
+
+                                <td>
+                                    <span class="font-monospace small fw-bold text-dark">{{ card.card_number }}</span>
+                                    {% if card.blood_group %}
+                                        <div><span class="badge bg-light text-dark border small">Blood: {{ card.blood_group }}</span></div>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if card.payment_status == 'Paid' %}
+                                        <span class="badge bg-success-subtle text-success mb-1">
+                                            <i class="bi bi-check2 me-1"></i> Paid ({{ currency_symbol }}{{ "%.2f"|format(card.fee_amount|float) }})
+                                        </span>
+                                        {% if card.payment_reference %}
+                                            <div class="small font-monospace text-muted" title="UPI UTR Reference">
+                                                UTR: <code>{{ card.payment_reference }}</code>
+                                            </div>
+                                        {% endif %}
+                                    {% elif card.payment_status == 'Waived' %}
+                                        <span class="badge bg-info-subtle text-info">Fee Waived</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning">
+                                            <i class="bi bi-hourglass me-1"></i> Unpaid ({{ currency_symbol }}{{ "%.2f"|format(card.fee_amount|float) }})
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if card.status == 'Approved' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-patch-check me-1"></i> Approved
+                                        </span>
+                                        {% if card.expiry_date %}
+                                            <div class="text-muted small">Exp: {{ card.expiry_date.strftime('%b %Y') }}</div>
+                                        {% endif %}
+                                    {% elif card.status == 'Pending' %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-clock me-1"></i> Pending Review
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger" title="{{ card.rejection_remarks or '' }}">
+                                            <i class="bi bi-x-circle me-1"></i> Rejected
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <div class="small text-muted">{{ card.created_at.strftime('%d %b %Y') }}</div>
+                                    <div class="small text-muted">{{ card.created_at.strftime('%I:%M %p') }}</div>
+                                </td>
+
+                                <td class="text-end">
+                                    {% if card.status == 'Pending' %}
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ card.id }}" title="Approve ID Card">
+                                                <i class="bi bi-check-lg"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ card.id }}" title="Reject Application">
+                                                <i class="bi bi-x-lg"></i> Reject
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <a href="{{ url_for(prefix ~ '.id_card_view', card_id=card.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i> View Card
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            <!-- APPROVE MODAL -->
+                            <div class="modal fade" id="approveModal{{ card.id }}" tabindex="-1" aria-labelledby="approveModalLabel{{ card.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content text-start">
+                                        <form method="POST" action="{{ url_for(prefix ~ '.id_card_approve', card_id=card.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title fw-bold" id="approveModalLabel{{ card.id }}">Approve Student Library ID Card</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="mb-3">Confirm approval and digital issue for <strong>{{ card.student.full_name }}</strong> (Roll: {{ card.roll_number }}).</p>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Card Validity Period</label>
+                                                    <select name="validity_years" class="form-select">
+                                                        <option value="1">1 Academic Year</option>
+                                                        <option value="2">2 Academic Years</option>
+                                                        <option value="3" selected>3 Academic Years (Recommended)</option>
+                                                        <option value="4">4 Academic Years (B.Tech / Degree)</option>
+                                                        <option value="5">5 Academic Years (Integrated / PhD)</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="alert alert-light border small text-muted mb-0">
+                                                    <i class="bi bi-info-circle me-1 text-primary"></i> Approving will generate the high-density circulation desk QR code and allow the student to view and print their official digital card.
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success fw-semibold">
+                                                    <i class="bi bi-check-circle me-1"></i> Approve & Issue Card
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- REJECT MODAL -->
+                            <div class="modal fade" id="rejectModal{{ card.id }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ card.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content text-start">
+                                        <form method="POST" action="{{ url_for(prefix ~ '.id_card_reject', card_id=card.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title fw-bold text-danger" id="rejectModalLabel{{ card.id }}">Reject ID Card Application</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="mb-3">Rejecting application for <strong>{{ card.student.full_name }}</strong>.</p>
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold text-dark">Reason / Rejection Remarks <span class="text-danger">*</span></label>
+                                                    <textarea name="rejection_remarks" class="form-control" rows="3" placeholder="e.g. Unclear photo uploaded, incorrect batch specified, or invalid UPI UTR reference." required></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-danger fw-semibold">
+                                                    <i class="bi bi-x-circle me-1"></i> Reject Application
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="brand-icon-wrapper mx-auto mb-3 bg-light text-muted" style="width: 52px; height: 52px; font-size: 1.5rem;">
+                                    <i class="bi bi-inbox"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">No ID Card Applications Found</h6>
+                                <p class="text-muted small mb-3">No student ID card requests match the selected filters.</p>
+                                <a href="{{ url_for(prefix ~ '.id_card_create') }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i> Issue New Card
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

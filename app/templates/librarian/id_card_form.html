@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% set prefix = bp_prefix|default('librarian') %}
+
+{% block title %}Issue Student ID Card - {{ 'Admin' if prefix == 'admin' else 'Librarian' }} Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Navigation Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for(prefix ~ '.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for(prefix ~ '.id_cards_list') }}">ID Cards</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Direct Issue ID Card</li>
+                </ol>
+            </nav>
+
+            <div class="smart-card p-4 p-md-5 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                    <span class="brand-icon-wrapper" style="width: 52px; height: 52px; font-size: 1.5rem;">
+                        <i class="bi bi-person-vcard-fill"></i>
+                    </span>
+                    <div>
+                        <h4 class="fw-bold mb-0">Issue Student Library ID Card</h4>
+                        <p class="text-muted small mb-0">Directly create and approve an official CR80 smart library card for a student</p>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for(prefix ~ '.id_card_create') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Step 1: Student Selection -->
+                    <h6 class="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-person-check"></i> 1. Select Registered Student
+                    </h6>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-dark" for="student_id">Student Account <span class="text-danger">*</span></label>
+                        <select name="student_id" id="student_id" class="form-select form-select-lg" required onchange="handleStudentSelect(this)">
+                            <option value="">-- Choose Student by Name or Roll Number --</option>
+                            {% for student in students %}
+                                <option value="{{ student.id }}" 
+                                        data-roll="{{ student.student_id or 'STU' ~ '%04d'|format(student.id) }}"
+                                        data-phone="{{ student.phone or '' }}"
+                                        data-avatar="{{ student.profile_image or '' }}">
+                                    {{ student.full_name }} ({{ student.student_id or 'STU' ~ '%04d'|format(student.id) }}) - {{ student.email }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Step 2: Academic & Personal Profile -->
+                    <h6 class="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-mortarboard"></i> 2. Academic & Personal Information
+                    </h6>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark" for="course_branch">Course & Branch <span class="text-danger">*</span></label>
+                            <input type="text" name="course_branch" id="course_branch" class="form-control" placeholder="e.g. B.Tech Computer Science" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-dark" for="academic_year">Academic Batch / Year <span class="text-danger">*</span></label>
+                            <input type="text" name="academic_year" id="academic_year" class="form-control" placeholder="e.g. 2024-2028 (Year 1)" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark" for="blood_group">Blood Group</label>
+                            <select name="blood_group" id="blood_group" class="form-select">
+                                <option value="">Select Blood Group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark" for="dob">Date of Birth</label>
+                            <input type="date" name="dob" id="dob" class="form-control">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark" for="emergency_contact">Emergency Phone</label>
+                            <input type="tel" name="emergency_contact" id="emergency_contact" class="form-control" placeholder="Parent / Contact">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-dark" for="address">Address / Hostel Location</label>
+                            <textarea name="address" id="address" rows="2" class="form-control" placeholder="Hostel Block or Residential address"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-dark">ID Card Photo</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="id-photo-preview border rounded d-flex align-items-center justify-content-center bg-light" style="width: 72px; height: 86px; overflow: hidden;" id="photo_preview_box">
+                                    <i class="bi bi-person fs-1 text-muted" id="photo_placeholder"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <input type="file" name="id_photo" id="id_photo" class="form-control" accept="image/png, image/jpeg, image/webp" onchange="previewUpload(this)">
+                                    <span class="small text-muted">Upload a new photo, or leave empty to use the student's existing profile avatar.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Payment & Validity -->
+                    <h6 class="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-cash-stack"></i> 3. Fee Payment & Validity
+                    </h6>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark" for="payment_status">Payment Status</label>
+                            <select name="payment_status" id="payment_status" class="form-select">
+                                <option value="Paid" selected>Paid (Verified)</option>
+                                <option value="Waived">Waived (Scholarship / Staff)</option>
+                                <option value="Pending">Pending Student Payment</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark" for="payment_method">Payment Method</label>
+                            <select name="payment_method" id="payment_method" class="form-select">
+                                <option value="Cash" selected>Cash at Counter</option>
+                                <option value="UPI">UPI Payment</option>
+                                <option value="Direct Staff Issue">Staff Issued Free</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark" for="validity_years">Card Validity</label>
+                            <select name="validity_years" id="validity_years" class="form-select">
+                                <option value="1">1 Academic Year</option>
+                                <option value="2">2 Academic Years</option>
+                                <option value="3" selected>3 Academic Years (Standard)</option>
+                                <option value="4">4 Academic Years (B.Tech)</option>
+                                <option value="5">5 Academic Years (PhD / Med)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-dark" for="payment_reference">Receipt / Reference Note</label>
+                            <input type="text" name="payment_reference" id="payment_reference" class="form-control" placeholder="Cash Receipt # or Staff Authorization note (optional)">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{{ url_for(prefix ~ '.id_cards_list') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold">
+                            <i class="bi bi-check-circle me-1"></i> Create & Issue Student ID Card
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function handleStudentSelect(select) {
+        const option = select.options[select.selectedIndex];
+        if (option && option.value) {
+            const phone = option.getAttribute('data-phone');
+            const avatar = option.getAttribute('data-avatar');
+            if (phone) {
+                const phoneField = document.getElementById('emergency_contact');
+                if (!phoneField.value) {
+                    phoneField.value = phone;
+                }
+            }
+            if (avatar) {
+                const box = document.getElementById('photo_preview_box');
+                box.innerHTML = '<img src="/static/' + avatar + '" style="width:100%; height:100%; object-fit:cover;">';
+            }
+        }
+    }
+
+    function previewUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const box = document.getElementById('photo_preview_box');
+                box.innerHTML = '<img src="' + e.target.result + '" style="width:100%; height:100%; object-fit:cover;">';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}

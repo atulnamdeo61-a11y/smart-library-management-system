@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="smart-card p-4 p-md-5 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <span class="brand-icon-wrapper" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                        <i class="bi bi-book"></i>
+                    </span>
+                    <div>
+                        <h3 class="fw-bold mb-0">{{ title }}</h3>
+                        <p class="text-muted small mb-0">Enter book specifications, physical inventory copies, and location</p>
+                    </div>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label" for="title">Book Title</label>
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="e.g. Clean Architecture", id="title") }}
+                            {% for err in form.title.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="category_id">Academic Category</label>
+                            {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else ""), id="category_id") }}
+                            {% for err in form.category_id.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="author">Author(s)</label>
+                            {{ form.author(class="form-control" + (" is-invalid" if form.author.errors else ""), placeholder="e.g. Robert C. Martin", id="author") }}
+                            {% for err in form.author.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="isbn">ISBN (10 or 13 digits)</label>
+                            {{ form.isbn(class="form-control" + (" is-invalid" if form.isbn.errors else ""), placeholder="e.g. 978-0134494166", id="isbn") }}
+                            {% for err in form.isbn.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="publisher">Publisher</label>
+                            {{ form.publisher(class="form-control" + (" is-invalid" if form.publisher.errors else ""), placeholder="e.g. Prentice Hall", id="publisher") }}
+                            {% for err in form.publisher.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label" for="publication_year">Year</label>
+                            {{ form.publication_year(class="form-control" + (" is-invalid" if form.publication_year.errors else ""), placeholder="e.g. 2020", id="publication_year") }}
+                            {% for err in form.publication_year.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label" for="shelf_location">Shelf / Rack</label>
+                            {{ form.shelf_location(class="form-control" + (" is-invalid" if form.shelf_location.errors else ""), placeholder="e.g. CS-04", id="shelf_location") }}
+                            {% for err in form.shelf_location.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="total_copies">Total Physical Copies</label>
+                            {{ form.total_copies(class="form-control" + (" is-invalid" if form.total_copies.errors else ""), min="1", id="total_copies") }}
+                            {% for err in form.total_copies.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="available_copies">Available Copies</label>
+                            {{ form.available_copies(class="form-control" + (" is-invalid" if form.available_copies.errors else ""), min="0", id="available_copies") }}
+                            {% for err in form.available_copies.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="cover_image">Cover Image (Optional)</label>
+                            {{ form.cover_image(class="form-control" + (" is-invalid" if form.cover_image.errors else ""), id="cover_image") }}
+                            {% for err in form.cover_image.errors %}
+                                <div class="text-danger small mt-1">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="description">Description / Syllabus Notes</label>
+                            {{ form.description(class="form-control", rows="4", placeholder="Summary of book topics and reference chapters...", id="description") }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{{ url_for('admin.books_list') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check2-circle me-1"></i> Save Book Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

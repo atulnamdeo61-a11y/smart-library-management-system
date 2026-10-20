@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Smart Library{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="smart-card p-4 p-md-5 shadow-sm">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="brand-icon-wrapper" style="width: 52px; height: 52px; font-size: 1.5rem;">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0">Student Profile</h3>
+                        <p class="text-muted small mb-0">View account status and update contact information</p>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('student.profile') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label" for="full_name">Full Name</label>
+                        <input type="text" name="full_name" id="full_name" value="{{ user.full_name }}" class="form-control" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">College Email (Read-Only)</label>
+                            <input type="email" value="{{ user.email }}" class="form-control bg-light" disabled>
+                            <span class="small text-muted">Fixed by academic system.</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Student / Roll ID (Read-Only)</label>
+                            <input type="text" value="{{ user.student_id or 'N/A' }}" class="form-control bg-light" disabled>
+                            <span class="small text-muted">Issued by college registrar.</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="phone">Contact Phone Number</label>
+                        <input type="text" name="phone" id="phone" value="{{ user.phone or '' }}" class="form-control" placeholder="+91 98765 43210">
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <span class="badge bg-success-subtle text-success py-2 px-3">
+                            <i class="bi bi-shield-check me-1"></i> Role: Student (Active)
+                        </span>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
