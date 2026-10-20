@@ -427,3 +427,14 @@ def id_card_view(card_id):
         QRService.generate_id_card_qr(card)
         db.session.commit()
     return render_template('librarian/id_card_view.html', card=card)
+
+
+@librarian_bp.route('/id-cards/<int:card_id>/print')
+@staff_required
+def id_card_print(card_id):
+    """Staff printable view for a student ID card."""
+    card = StudentIdCard.query.get_or_404(card_id)
+    if not card.qr_code_path:
+        QRService.generate_id_card_qr(card)
+        db.session.commit()
+    return render_template('student/id_card_print.html', card=card)

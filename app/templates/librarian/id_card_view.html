@@ -79,7 +79,7 @@
                 <i class="bi bi-arrow-left me-1"></i> Back to Cards List
             </a>
             {% if card.is_approved %}
-                <a href="{{ url_for('student.id_card_print') }}" target="_blank" class="btn btn-primary shadow-sm">
+                <a href="{{ url_for(prefix ~ '.id_card_print', card_id=card.id) }}" target="_blank" class="btn btn-primary shadow-sm">
                     <i class="bi bi-printer me-1"></i> Print Official Card
                 </a>
             {% endif %}

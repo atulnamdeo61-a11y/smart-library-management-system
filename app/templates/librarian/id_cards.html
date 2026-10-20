@@ -203,9 +203,16 @@
                                             </button>
                                         </div>
                                     {% else %}
-                                        <a href="{{ url_for(prefix ~ '.id_card_view', card_id=card.id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye me-1"></i> View Card
-                                        </a>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for(prefix ~ '.id_card_view', card_id=card.id) }}" class="btn btn-outline-primary" title="View Card Details">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                            {% if card.is_approved %}
+                                                <a href="{{ url_for(prefix ~ '.id_card_print', card_id=card.id) }}" target="_blank" class="btn btn-outline-success" title="Print Official ID Card">
+                                                    <i class="bi bi-printer"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
                                     {% endif %}
                                 </td>
                             </tr>

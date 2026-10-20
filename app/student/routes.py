@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 from decimal import Decimal
 from datetime import date, datetime
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, abort
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.auth.decorators import student_required
@@ -341,10 +341,24 @@ def id_card_submit_payment():
 
 
 @student_bp.route('/id-card/print')
-@student_required
-def id_card_print():
+@student_bp.route('/id-card/<int:card_id>/print')
+@login_required
+def id_card_print(card_id=None):
     """Printable digital copy of the approved student ID card."""
-    card = StudentIdCard.query.filter_by(student_id=current_user.id, status=StudentIdCard.STATUS_APPROVED).first_or_404()
+    if card_id is not None:
+        card = StudentIdCard.query.get_or_404(card_id)
+        if not (current_user.is_staff or card.student_id == current_user.id):
+            abort(403)
+    else:
+        if current_user.is_staff:
+            # If staff visits without card_id, grab the most recent approved card
+            card = StudentIdCard.query.filter_by(status=StudentIdCard.STATUS_APPROVED).order_by(StudentIdCard.id.desc()).first()
+            if not card:
+                flash('No approved ID cards found to print.', 'info')
+                return redirect(url_for('librarian.id_cards_list'))
+        else:
+            card = StudentIdCard.query.filter_by(student_id=current_user.id, status=StudentIdCard.STATUS_APPROVED).first_or_404()
+
     if not card.qr_code_path:
         QRService.generate_id_card_qr(card)
         db.session.commit()
