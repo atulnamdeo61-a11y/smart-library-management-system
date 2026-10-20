@@ -1,0 +1,81 @@
+PROPRIETARY AND CONFIDENTIAL PERSONAL PROJECT LICENSE
+======================================================
+Copyright (c) 2026 Atul Namdeo (GitHub: @atulnamdeo61-a11y). All Rights Reserved.
+
+IMPORTANT: THIS IS A PERSONAL ACADEMIC PROJECT AND IS STRICTLY NOT OPEN-SOURCE SOFTWARE.
+========================================================================================
+
+This repository, including its source code, architecture, database schemas,
+design assets, documentation, tests, and configuration scripts (hereinafter
+referred to as the "Software"), is the exclusive intellectual property and
+personal academic work of Atul Namdeo (the "Author").
+
+By accessing, viewing, cloning, or downloading this Software, you agree to be
+bound by the following terms and restrictions:
+
+1. NON-OPEN-SOURCE DECLARATION
+------------------------------
+This Software is NOT licensed under the MIT License, GNU General Public License (GPL),
+Apache License, BSD License, or any other open-source or copyleft licensing framework.
+No open-source rights or public domain dedications are granted or implied.
+
+2. RESTRICTIONS ON USE, MODIFICATION, AND DISTRIBUTION
+------------------------------------------------------
+Except as explicitly permitted in Section 3 ("PERMITTED LIMITED USE"):
+  a. NO REPRODUCTION: You may not copy, mirror, fork, redistribute, republish,
+     or reproduce any part of this Software in any form or by any means.
+  b. NO MODIFICATION: You may not modify, adapt, translate, reverse engineer,
+     decompile, disassemble, or create derivative works based upon this Software.
+  c. NO COMMERCIAL USE: You may not sell, rent, lease, sublicense, bundle, host
+     as SaaS, or otherwise exploit this Software commercially or for profit.
+  d. NO ACADEMIC PLAGIARISM: You may NOT submit this Software, in whole or in
+     part, as your own academic, collegiate, university, or minor/major project,
+     coursework, dissertation, or capstone evaluation. Academic integrity
+     violations will be reported to appropriate institutional authorities.
+  e. NO RE-BRANDING: You may not remove, alter, or obscure any copyright notices,
+     watermarks, author credits, or proprietary disclaimers from the Software.
+
+3. PERMITTED LIMITED USE
+------------------------
+Permission is granted exclusively for:
+  a. Portfolio and Code Review: Viewing the source code on GitHub solely for the
+     purposes of evaluating the Author's software development competency, technical
+     skills, and engineering capabilities (e.g., by prospective employers, recruiters,
+     academic evaluators, or technical interviewers).
+  b. Local Testing for Evaluation: Cloning and running the Software locally on an
+     isolated development machine solely to inspect functionality for peer review
+     or employment evaluation, provided that no redistribution or unauthorized sharing
+     occurs.
+
+4. INTELLECTUAL PROPERTY OWNERSHIP
+----------------------------------
+All title, ownership, and intellectual property rights in and to the Software
+(including but not limited to code, database designs, UI templates, algorithmic
+workflows, and documentation) remain solely and exclusively with the Author.
+
+5. TERMINATION
+--------------
+Any unauthorized copying, distribution, commercial use, or submission of this
+Software constitutes copyright infringement and will automatically terminate any
+limited viewing rights granted herein. The Author reserves all statutory and common
+law legal remedies against infringing parties.
+
+6. DISCLAIMER OF WARRANTY
+-------------------------
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+7. CONTACT & INQUIRIES
+----------------------
+For permission requests, licensing inquiries, or legitimate academic verification,
+please contact the Author directly:
+  Author: Atul Namdeo
+  GitHub: https://github.com/atulnamdeo61-a11y
+  Email:  atulnamdeo61@gmail.com

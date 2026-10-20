@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Atul Namdeo (GitHub: @atulnamdeo61-a11y). All Rights Reserved.
+# Proprietary and Personal Academic Project. Strictly NOT Open-Source Software.
+# Unauthorized copying, distribution, or plagiarism is strictly prohibited.
+
 import os
 from datetime import datetime, date
 from pathlib import Path

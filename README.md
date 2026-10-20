@@ -1,6 +1,18 @@
 # Smart Library Management System 📚
 
-A modern, full-stack, automated web application for college library operations, book circulation, overdue fine accounting, QR-code book identification, and personalized recommendations.
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary%20%7C%20All%20Rights%20Reserved-red.svg)](LICENSE)
+[![Project: Personal Academic](https://img.shields.io/badge/Project-Personal%20Academic%20Project-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Framework-Flask%203.0-green.svg)](https://flask.palletsprojects.com/)
+[![Tests: 44 Passed](https://img.shields.io/badge/Tests-44%20Passing-brightgreen.svg)](#10-automated-testing)
+
+> ⚠️ **PROPRIETARY & COPYRIGHT PROTECTED:**  
+> This repository is a **personal academic project** authored by **[Atul Namdeo](https://github.com/atulnamdeo61-a11y)**. It is **STRICTLY NOT AN OPEN-SOURCE PROJECT**.  
+> Unauthorized copying, cloning, modification, commercial redistribution, re-branding, or submission as academic/collegiate coursework is strictly prohibited under international copyright law. Please see [LICENSE](LICENSE) and [SECURITY.md](SECURITY.md) for full terms.
+
+---
+
+A modern, full-stack, automated web application for college library operations, book circulation, overdue fine accounting, scannable CR80 ID cards, QR-code book identification, and personalized recommendations.
 
 Built with **Python 3**, **Flask**, **SQLAlchemy ORM**, **MySQL 8.0**, **Bootstrap 5**, and **Chart.js**.
 
@@ -248,4 +260,21 @@ Follow this sequence during your college project presentation:
 - [x] **8. Process Return:** Under Active Loans, click **Return Book**. Show that the return date is saved, stock increments back, and the loan is moved to history.
 - [x] **9. Record Fine Payment:** Under Fines, record a counter payment (e.g. ₹12.00 Cash) and show status update to **Paid**.
 - [x] **10. Admin Analytics:** Sign in as `admin@college.edu` (`Admin@123`). Show the live Chart.js graphs, audit logs, and system rules settings.
-- [x] **11. Run Pytest:** Open terminal and run `pytest -v` to prove 26/26 automated tests passing.
+- [x] **11. Run Pytest:** Open terminal and run `pytest -v` to prove all 44 automated tests passing.
+
+---
+
+## 12. Copyright & Intellectual Property Protection 🛡️
+
+**Copyright (c) 2026 Atul Namdeo (`atulnamdeo61-a11y`). All Rights Reserved.**
+
+* **Project Classification:** Personal Minor Academic Project.
+* **License Model:** **Proprietary & Confidential / All Rights Reserved** (Strictly Non-Open-Source).
+* **Anti-Plagiarism & Academic Integrity Notice:**  
+  This software, design architecture, database schema, and accompanying documentation are the original intellectual property of **Atul Namdeo**. No permission is granted to reproduce, re-host, mirror, re-license, or submit this software—either in whole or in part—as your own academic, collegiate, university, or polytechnic project, coursework, or capstone evaluation. Academic integrity violations will be vigorously pursued.
+* **Permitted Scope:**  
+  Permission is granted exclusively for online code review, portfolio inspection by prospective recruiters or academic examiners, and local non-distributable testing.
+* **Legal Terms:**  
+  For complete licensing and liability details, refer to the [LICENSE](LICENSE) file.
+* **Inquiries & Permission Requests:**  
+  Direct all legitimate inquiries to the author: [atulnamdeo61@gmail.com](mailto:atulnamdeo61@gmail.com) | GitHub: [@atulnamdeo61-a11y](https://github.com/atulnamdeo61-a11y).

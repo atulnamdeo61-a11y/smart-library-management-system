@@ -5,8 +5,12 @@
 
 ## PROJECT METADATA
 * **Project Title:** Smart Library Management System
+* **Author / Developer:** Atul Namdeo (GitHub: [@atulnamdeo61-a11y](https://github.com/atulnamdeo61-a11y))
+* **Email:** atulnamdeo61@gmail.com
+* **Project Nature:** Personal Minor Academic Project
+* **Licensing:** Proprietary & Confidential (All Rights Reserved — Strictly Non-Open-Source)
 * **Domain:** Web Application / Information Systems / Database Engineering
-* **Technology Stack:** Python 3, Flask, SQLAlchemy ORM, MySQL 8.0, Bootstrap 5, Chart.js, QR Code
+* **Technology Stack:** Python 3, Flask, SQLAlchemy ORM, MySQL 8.0 / SQLite, Bootstrap 5, Chart.js, QR Code
 * **Target Environment:** College Computer Science & Information Technology Department
 
 ---
