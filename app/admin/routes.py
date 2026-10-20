@@ -22,6 +22,7 @@ from app.services.circulation_service import CirculationService
 from app.services.fine_service import FineService
 from app.services.qr_service import QRService
 from app.services.analytics_service import AnalyticsService
+from app.services.gemini_service import GeminiService
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -536,6 +537,8 @@ def settings():
         id_card_fee = request.form.get('id_card_fee', type=float)
         upi_id = request.form.get('upi_id', '').strip()
         upi_payee_name = request.form.get('upi_payee_name', '').strip()
+        gemini_api_key = request.form.get('gemini_api_key', '').strip()
+        gemini_model = request.form.get('gemini_model', '').strip()
 
         if borrow_days and borrow_days > 0:
             current_app.config['DEFAULT_BORROW_DAYS'] = borrow_days
@@ -549,12 +552,16 @@ def settings():
             current_app.config['UPI_ID'] = upi_id
         if upi_payee_name:
             current_app.config['UPI_PAYEE_NAME'] = upi_payee_name
+        if gemini_api_key:
+            current_app.config['GEMINI_API_KEY'] = gemini_api_key
+        if gemini_model:
+            current_app.config['GEMINI_MODEL'] = gemini_model
 
         AuditLog.record(
             actor_id=current_user.id,
             action='UPDATE_SETTINGS',
             entity_type='SystemConfig',
-            details=f"Updated settings: BorrowDays={borrow_days}, FineRate=₹{fine_rate}/day, MaxLoans={max_loans}, IDCardFee=₹{id_card_fee}, UPI_ID={upi_id}"
+            details=f"Updated settings: BorrowDays={borrow_days}, FineRate=₹{fine_rate}/day, MaxLoans={max_loans}, IDCardFee=₹{id_card_fee}, GeminiModel={gemini_model or current_app.config.get('GEMINI_MODEL')}"
         )
         db.session.commit()
         flash('System configuration rules updated successfully.', 'success')
@@ -568,7 +575,11 @@ def settings():
         id_card_fee=current_app.config.get('ID_CARD_FEE', 50.00),
         upi_id=current_app.config.get('UPI_ID', 'smartlibrary@upi'),
         upi_payee_name=current_app.config.get('UPI_PAYEE_NAME', 'Smart College Library'),
-        currency_symbol=current_app.config.get('CURRENCY_SYMBOL', '₹')
+        currency_symbol=current_app.config.get('CURRENCY_SYMBOL', '₹'),
+        gemini_api_key=current_app.config.get('GEMINI_API_KEY', ''),
+        gemini_model=current_app.config.get('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+        supported_gemini_models=GeminiService.SUPPORTED_MODELS,
+        is_gemini_active=bool(current_app.config.get('GEMINI_API_KEY'))
     )
 
 

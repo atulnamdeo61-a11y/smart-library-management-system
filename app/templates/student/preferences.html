@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Reading Preferences - Smart Library{% endblock %}
+{% block title %}Academic Degree & Reading Preferences - Smart Library{% endblock %}
 
 {% block content %}
 <div class="container py-2">
@@ -8,39 +8,76 @@
         <div class="col-lg-8">
             <div class="smart-card p-4 p-md-5 shadow-sm">
                 <div class="d-flex align-items-center gap-3 mb-4">
-                    <span class="brand-icon-wrapper" style="width: 48px; height: 48px; font-size: 1.4rem;">
-                        <i class="bi bi-heart-fill"></i>
+                    <span class="brand-icon-wrapper" style="width: 52px; height: 52px; font-size: 1.5rem; background: linear-gradient(135deg, #4f46e5, #06b6d4); color: white;">
+                        <i class="bi bi-mortarboard-fill"></i>
                     </span>
                     <div>
-                        <h3 class="fw-bold mb-1">Set Your Reading Preferences</h3>
-                        <p class="text-muted small mb-0">Select your favorite academic topics to tune the Smart Recommendation Engine.</p>
+                        <h3 class="fw-bold mb-1">Academic Degree & Reading Preferences</h3>
+                        <p class="text-muted small mb-0">Tune Google Gemini AI recommendations to your current semester syllabus and personal interests.</p>
                     </div>
                 </div>
 
                 <form method="POST" action="{{ url_for('student.preferences') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                    <div class="row g-3 mb-4">
-                        {% for cat in categories %}
-                            <div class="col-md-6">
-                                <label class="p-3 bg-light rounded-3 border d-flex align-items-start gap-3 h-100 cursor-pointer hover-bg-light">
-                                    <input type="checkbox" name="category_ids" value="{{ cat.id }}" class="form-check-input mt-1" 
-                                           {% if cat.id in current_pref_ids %}checked{% endif %}>
-                                    <div>
-                                        <div class="fw-bold text-dark">{{ cat.name }}</div>
-                                        <div class="small text-muted">{{ cat.description or 'Books and journals on this topic.' }}</div>
-                                    </div>
-                                </label>
+                    <!-- Course of Study Selector -->
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center gap-2 mb-1" for="course_select">
+                            <i class="bi bi-book-half text-primary"></i> Current Course / Program of Study
+                        </label>
+                        <p class="text-muted small mb-2">Google Gemini AI uses your degree curriculum to suggest syllabus-aligned textbooks and exam reference volumes.</p>
+
+                        <div class="row g-2">
+                            <div class="col-md-7">
+                                <select name="course" id="course_select" class="form-select fw-semibold" onchange="toggleCustomCourse(this)">
+                                    {% set curr = student_course|default('MCA') %}
+                                    <option value="MCA" {% if 'MCA' in curr.upper() %}selected{% endif %}>MCA (Master of Computer Applications)</option>
+                                    <option value="BCA" {% if 'BCA' in curr.upper() %}selected{% endif %}>BCA (Bachelor of Computer Applications)</option>
+                                    <option value="B.Tech Computer Science" {% if 'B.TECH' in curr.upper() and ('COMP' in curr.upper() or 'CSE' in curr.upper()) %}selected{% endif %}>B.Tech Computer Science & Engineering</option>
+                                    <option value="B.Tech AI & Data Science" {% if 'AI' in curr.upper() or 'DATA' in curr.upper() %}selected{% endif %}>B.Tech Artificial Intelligence & Data Science</option>
+                                    <option value="B.Tech Electronics & Comm" {% if 'ELECT' in curr.upper() or 'ECE' in curr.upper() %}selected{% endif %}>B.Tech Electronics & Communication (ECE)</option>
+                                    <option value="B.Tech Mechanical Engineering" {% if 'MECH' in curr.upper() %}selected{% endif %}>B.Tech Mechanical Engineering</option>
+                                    <option value="B.Sc Computer Science / IT" {% if 'B.SC' in curr.upper() %}selected{% endif %}>B.Sc (Computer Science / Information Technology)</option>
+                                    <option value="MBA / Management" {% if 'MBA' in curr.upper() or 'MANAG' in curr.upper() %}selected{% endif %}>MBA (Master of Business Administration)</option>
+                                    <option value="__custom__" {% if curr not in ['MCA', 'BCA', 'B.Tech Computer Science', 'B.Tech AI & Data Science', 'B.Tech Electronics & Comm', 'B.Tech Mechanical Engineering', 'B.Sc Computer Science / IT', 'MBA / Management'] %}selected{% endif %}>Other / Custom Degree Program...</option>
+                                </select>
                             </div>
-                        {% endfor %}
+                            <div class="col-md-5">
+                                <input type="text" name="custom_course" id="custom_course_input" class="form-control {% if '__custom__' not in curr %}d-none{% endif %}" 
+                                       placeholder="Enter degree name (e.g. M.Sc AI)" value="{{ curr }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Topic Interests -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-tags-fill text-primary"></i> Academic Topics & Elective Interests
+                        </label>
+                        <p class="text-muted small mb-3">Choose the subjects you are most keen to explore. Gemini will balance core syllabus with these topics.</p>
+
+                        <div class="row g-3">
+                            {% for cat in categories %}
+                                <div class="col-md-6">
+                                    <label class="p-3 bg-light rounded-3 border d-flex align-items-start gap-3 h-100 cursor-pointer hover-bg-light">
+                                        <input type="checkbox" name="category_ids" value="{{ cat.id }}" class="form-check-input mt-1" 
+                                               {% if cat.id in current_pref_ids %}checked{% endif %}>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ cat.name }}</div>
+                                            <div class="small text-muted">{{ cat.description or 'Books and journals on this topic.' }}</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                         <a href="{{ url_for('student.recommendations') }}" class="btn btn-outline-secondary">
                             Cancel
                         </a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-check-lg me-1"></i> Save Reading Interests
+                        <button type="submit" class="btn btn-primary px-4 fw-bold">
+                            <i class="bi bi-stars me-1"></i> Save Degree & Interests
                         </button>
                     </div>
                 </form>
@@ -48,4 +85,27 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleCustomCourse(select) {
+        const input = document.getElementById('custom_course_input');
+        if (select.value === '__custom__') {
+            input.classList.remove('d-none');
+            input.focus();
+        } else {
+            input.classList.add('d-none');
+        }
+    }
+
+    document.querySelector('form').addEventListener('submit', function() {
+        const select = document.getElementById('course_select');
+        const input = document.getElementById('custom_course_input');
+        if (select.value === '__custom__' && input.value.trim()) {
+            select.name = 'course_disabled';
+            input.name = 'course';
+        }
+    });
+</script>
 {% endblock %}

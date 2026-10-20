@@ -123,27 +123,42 @@ def fines():
 @student_bp.route('/recommendations')
 @student_required
 def recommendations():
-    """Personalized recommendations page based on history and category preferences."""
-    rec_list = RecommendationService.get_recommendations_for_student(current_user.id, limit=12)
+    """Personalized recommendations page based on course of study (MCA, BCA, B.Tech, etc.) and preferences."""
+    requested_course = request.args.get('course', '').strip()
+    active_course = requested_course or current_user.effective_course or 'MCA'
+
+    rec_list = RecommendationService.get_recommendations_for_student(
+        student_id=current_user.id,
+        limit=12,
+        course=active_course
+    )
     user_prefs = [p.category_id for p in current_user.preferences.all()]
 
     return render_template(
         'student/recommendations.html',
         recommendations=rec_list,
-        has_preferences=bool(user_prefs)
+        has_preferences=bool(user_prefs),
+        active_course=active_course,
+        is_ai_enabled=RecommendationService.is_ai_enabled(),
+        ai_model=RecommendationService.get_active_model()
     )
 
 
 @student_bp.route('/preferences', methods=['GET', 'POST'])
 @student_required
 def preferences():
-    """Manage student reading interests to tune the recommendation engine."""
+    """Manage student degree course of study and reading interests to tune the recommendation engine."""
     all_categories = Category.query.order_by(Category.name.asc()).all()
 
     if request.method == 'POST':
         selected_cat_ids = request.form.getlist('category_ids', type=int)
+        course = request.form.get('course', '').strip()
 
         try:
+            # Update student course of study
+            if course:
+                current_user.course = course
+
             # Clear previous preferences
             StudentPreference.query.filter_by(student_id=current_user.id).delete()
 
@@ -152,14 +167,19 @@ def preferences():
                 db.session.add(pref)
 
             db.session.commit()
-            flash('Your reading interests have been updated successfully! Check your recommendations.', 'success')
-            return redirect(url_for('student.recommendations'))
+            flash(f'Your course ({current_user.effective_course}) and reading interests were saved successfully!', 'success')
+            return redirect(url_for('student.recommendations', course=current_user.effective_course))
         except Exception as e:
             db.session.rollback()
             flash('Failed to update reading preferences. Please try again.', 'danger')
 
     current_pref_ids = {p.category_id for p in current_user.preferences.all()}
-    return render_template('student/preferences.html', categories=all_categories, current_pref_ids=current_pref_ids)
+    return render_template(
+        'student/preferences.html',
+        categories=all_categories,
+        current_pref_ids=current_pref_ids,
+        student_course=current_user.effective_course
+    )
 
 
 @student_bp.route('/books/<int:book_id>/request', methods=['POST'])

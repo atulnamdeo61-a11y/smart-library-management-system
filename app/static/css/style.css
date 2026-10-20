@@ -520,3 +520,128 @@ a:hover {
         font-size: 1.5rem;
     }
 }
+
+/* ==========================================================================
+   Google Gemini AI & Academic Recommendations Styles
+   ========================================================================== */
+
+.gemini-hero-card {
+    background: linear-gradient(135deg, #090d16 0%, #151936 40%, #1e1045 75%, #2a0b4d 100%) !important;
+    border-radius: 20px !important;
+    color: #ffffff !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.gemini-hero-card h1,
+.gemini-hero-card h2,
+.gemini-hero-card h3,
+.gemini-hero-card h4 {
+    color: #ffffff !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.gemini-hero-card p {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.gemini-glow {
+    position: absolute;
+    top: -70px;
+    right: -70px;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, rgba(99, 102, 241, 0.3) 40%, rgba(56, 189, 248, 0.15) 70%, transparent 80%);
+    border-radius: 50%;
+    filter: blur(35px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.gemini-badge {
+    background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%) !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    padding: 0.38rem 0.85rem !important;
+    border-radius: 50px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    box-shadow: 0 4px 15px rgba(129, 140, 248, 0.4) !important;
+}
+
+.course-pill {
+    border-radius: 30px !important;
+    padding: 0.45rem 1rem !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+.course-pill:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+.course-pill.active {
+    background: #ffffff !important;
+    color: #1e1b4b !important;
+    border-color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 6px 18px rgba(255, 255, 255, 0.35) !important;
+}
+
+.ai-rec-card {
+    border-radius: 18px !important;
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.ai-rec-card:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 20px 30px -8px rgba(79, 70, 229, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.06) !important;
+    border-color: #c7d2fe !important;
+}
+
+.curriculum-fit-pill {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    padding: 0.28rem 0.7rem !important;
+    border-radius: 8px !important;
+    background: #eef2ff !important;
+    color: #4338ca !important;
+    border: 1px solid #c7d2fe !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+}
+
+.ai-reason-box {
+    background: #f8fafc !important;
+    border-left: 3.5px solid #6366f1 !important;
+    border-radius: 0 10px 10px 0 !important;
+    padding: 0.75rem 0.95rem !important;
+    font-size: 0.83rem !important;
+    color: #334155 !important;
+    line-height: 1.5 !important;
+}
+

@@ -1,66 +1,213 @@
 {% extends "base.html" %}
 
-{% block title %}Recommended Books - Smart Library{% endblock %}
+{% block title %}Gemini AI Book Recommendations - Smart Library{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gemini-hero-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #2e1065 100%);
+        border-radius: 18px;
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 15px 35px -10px rgba(79, 70, 229, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .gemini-glow {
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 260px;
+        height: 260px;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(59, 130, 246, 0.2) 50%, transparent 70%);
+        border-radius: 50%;
+        filter: blur(25px);
+        pointer-events: none;
+    }
+    .gemini-badge {
+        background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+        color: #0f172a;
+        font-weight: 800;
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 0.35rem 0.75rem;
+        border-radius: 50px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        box-shadow: 0 4px 12px rgba(129, 140, 248, 0.35);
+    }
+    .course-pill {
+        border-radius: 30px;
+        padding: 0.4rem 0.95rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.06);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .course-pill:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+    .course-pill.active {
+        background: #ffffff;
+        color: #1e1b4b;
+        border-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.25);
+    }
+    .ai-rec-card {
+        border-radius: 16px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        position: relative;
+    }
+    .ai-rec-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        border-color: #cbd5e1;
+    }
+    .curriculum-fit-pill {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .ai-reason-box {
+        background: #f8fafc;
+        border-left: 3px solid #6366f1;
+        border-radius: 0 8px 8px 0;
+        padding: 0.65rem 0.85rem;
+        font-size: 0.82rem;
+        color: #334155;
+        line-height: 1.45;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-2">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-            <h3 class="fw-bold mb-1"><i class="bi bi-stars text-primary me-2"></i>Smart Book Recommendations</h3>
-            <p class="text-muted small mb-0">Personalized algorithmic suggestions powered by your reading preferences, past borrowing, and college trends.</p>
-        </div>
-        <a href="{{ url_for('student.preferences') }}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-sliders me-1"></i> Adjust My Reading Interests
-        </a>
-    </div>
+<div class="container py-3">
+    <!-- Gemini Hero Banner -->
+    <div class="gemini-hero-card p-4 p-md-5 mb-4" style="background: linear-gradient(135deg, #090d16 0%, #151936 40%, #1e1045 75%, #2a0b4d 100%);">
+        <div class="gemini-glow"></div>
+        <div class="row align-items-center position-relative" style="z-index: 2;">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="gemini-badge">
+                        <i class="bi bi-stars"></i> Powered by Google Gemini AI
+                    </span>
+                </div>
 
-    {% if not has_preferences %}
-        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
-            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
-            <div>
-                <strong>Want better personalized recommendations?</strong>
-                <div class="small">You haven't selected your topic interests yet. Currently displaying popular college library books. <a href="{{ url_for('student.preferences') }}" class="alert-link">Select your favorite subjects now &raquo;</a></div>
+                <h2 class="fw-bold mb-2 text-white">Course-Tailored Academic Recommendations</h2>
+                <p class="text-white-50 mb-3" style="max-width: 680px; font-size: 0.95rem;">
+                    Google Gemini analyzes your degree curriculum, core subjects, and personal topic preferences to curate high-impact textbooks and reference materials.
+                </p>
+
+                <!-- Course Switcher Pills -->
+                <div class="d-flex flex-wrap align-items-center gap-2 pt-2">
+                    <span class="text-white-50 small fw-semibold me-1"><i class="bi bi-mortarboard me-1"></i>Syllabus Target:</span>
+                    <a href="{{ url_for('student.recommendations', course='MCA') }}" class="course-pill {% if active_course|upper == 'MCA' %}active{% endif %}">
+                        MCA
+                    </a>
+                    <a href="{{ url_for('student.recommendations', course='BCA') }}" class="course-pill {% if active_course|upper == 'BCA' %}active{% endif %}">
+                        BCA
+                    </a>
+                    <a href="{{ url_for('student.recommendations', course='B.Tech Computer Science') }}" class="course-pill {% if 'B.TECH' in active_course|upper and ('COMP' in active_course|upper or 'CSE' in active_course|upper) %}active{% endif %}">
+                        B.Tech CSE
+                    </a>
+                    <a href="{{ url_for('student.recommendations', course='B.Tech AI & Data Science') }}" class="course-pill {% if 'AI' in active_course|upper or 'DATA' in active_course|upper %}active{% endif %}">
+                        B.Tech AI & Data Science
+                    </a>
+                    <a href="{{ url_for('student.recommendations', course='B.Tech Electronics & Comm') }}" class="course-pill {% if 'ELECT' in active_course|upper or 'ECE' in active_course|upper %}active{% endif %}">
+                        B.Tech ECE
+                    </a>
+                    <a href="{{ url_for('student.recommendations', course='B.Tech Mechanical Engineering') }}" class="course-pill {% if 'MECH' in active_course|upper or 'ME' in active_course|upper %}active{% endif %}">
+                        B.Tech ME
+                    </a>
+                    <a href="{{ url_for('student.recommendations', course='MBA / Management') }}" class="course-pill {% if 'MBA' in active_course|upper or 'MANAG' in active_course|upper %}active{% endif %}">
+                        MBA
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                <a href="{{ url_for('student.preferences') }}" class="btn btn-light px-4 py-2 shadow-sm rounded-pill fw-semibold text-primary">
+                    <i class="bi bi-sliders me-1"></i> Change Degree & Interests
+                </a>
+                <div class="small text-white-50 mt-2">
+                    Active Profile Degree: <span class="badge bg-white bg-opacity-25 text-white px-2 py-1 ms-1 fw-semibold">{{ current_user.effective_course|upper }}</span>
+                </div>
             </div>
         </div>
-    {% endif %}
+    </div>
 
+    <!-- Recommendations Grid -->
     {% if recommendations %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-collection-play text-primary"></i> Recommended for {{ active_course }}
+                <span class="badge bg-secondary-subtle text-secondary small fw-normal">{{ recommendations|length }} Titles</span>
+            </h5>
+            <span class="small text-muted d-none d-sm-inline">
+                Ranked by syllabus relevance and borrowing availability
+            </span>
+        </div>
+
         <div class="row g-4">
             {% for item in recommendations %}
                 <div class="col-lg-4 col-md-6">
-                    <div class="smart-card smart-card-interactive h-100 d-flex flex-column">
-                        <div class="book-cover-placeholder position-relative">
-                            <i class="bi bi-bookmark-star"></i>
-                            <div class="position-absolute top-0 end-0 m-3">
-                                <span class="status-badge status-active">
-                                    {{ item.book.available_copies }} In Stock
-                                </span>
-                            </div>
+                    <div class="ai-rec-card h-100 d-flex flex-column shadow-sm overflow-hidden">
+                        <!-- Card Header & Badge -->
+                        <div class="p-3 pb-0 d-flex justify-content-between align-items-start">
+                            <span class="curriculum-fit-pill">
+                                <i class="bi bi-award-fill text-warning"></i> {{ item.fit_level }}
+                            </span>
+                            <span class="badge {% if item.book.available_copies > 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill small">
+                                {{ item.book.available_copies }} In Stock
+                            </span>
                         </div>
 
-                        <div class="p-4 d-flex flex-column flex-grow-1">
-                            <div class="mb-2">
-                                <span class="rec-reason-badge">
-                                    <i class="bi bi-lightbulb-fill"></i> {{ item.reason }}
-                                </span>
+                        <!-- Card Body -->
+                        <div class="p-3 d-flex flex-column flex-grow-1">
+                            <div class="text-muted small fw-semibold text-uppercase mb-1" style="font-size: 0.72rem;">
+                                {{ item.book.category.name if item.book.category else 'General Engineering' }}
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1 text-truncate" title="{{ item.book.title }}">
+                                {{ item.book.title }}
+                            </h5>
+                            <div class="small text-secondary mb-3">
+                                <i class="bi bi-pen me-1"></i>{{ item.book.author }}
                             </div>
 
-                            <span class="text-muted small mb-1 fw-semibold text-uppercase" style="font-size: 0.75rem;">
-                                {{ item.book.category.name }}
-                            </span>
-                            <h5 class="fw-bold mb-1 text-truncate" title="{{ item.book.title }}">{{ item.book.title }}</h5>
-                            <p class="text-secondary small mb-2"><i class="bi bi-person me-1"></i>{{ item.book.author }}</p>
+                            <!-- AI Reasoning Box -->
+                            <div class="ai-reason-box mb-3 flex-grow-1">
+                                <div class="fw-bold small text-primary mb-1 d-flex align-items-center gap-1">
+                                    <i class="bi bi-stars"></i> Gemini Curriculum Insight:
+                                </div>
+                                <div>{{ item.reason }}</div>
+                            </div>
 
-                            <p class="text-muted small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                {{ item.book.description or 'Academic reference volume.' }}
-                            </p>
-
-                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                            <!-- Shelf Location & Actions -->
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
                                 <span class="small text-muted">
-                                    <i class="bi bi-geo-alt me-1"></i>{{ item.book.shelf_location or 'Main' }}
+                                    <i class="bi bi-geo-alt me-1 text-danger"></i>{{ item.book.shelf_location or 'Main Stack' }}
                                 </span>
-                                <a href="{{ url_for('books.detail', book_id=item.book.id) }}" class="btn btn-primary btn-sm px-3">
-                                    View Details <i class="bi bi-arrow-right"></i>
+                                <a href="{{ url_for('books.detail', book_id=item.book.id) }}" class="btn btn-sm btn-primary px-3 rounded-pill">
+                                    View Book <i class="bi bi-arrow-right ms-1"></i>
                                 </a>
                             </div>
                         </div>
@@ -71,9 +218,9 @@
     {% else %}
         <div class="smart-card p-5 text-center my-4">
             <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
-            <h4 class="fw-bold mb-2">No Recommendations Available</h4>
-            <p class="text-muted mb-3">All matching books may currently be on active loan or no books have been added to your chosen topics.</p>
-            <a href="{{ url_for('books.catalog') }}" class="btn btn-primary">Browse All Books</a>
+            <h4 class="fw-bold mb-2">No Recommendations for {{ active_course }}</h4>
+            <p class="text-muted mb-3">All catalog books matching this curriculum might currently be borrowed or not yet tagged with related categories.</p>
+            <a href="{{ url_for('books.catalog') }}" class="btn btn-primary">Browse All Library Books</a>
         </div>
     {% endif %}
 </div>

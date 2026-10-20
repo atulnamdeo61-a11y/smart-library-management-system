@@ -56,6 +56,10 @@ class Config:
     UPI_ID = os.getenv('UPI_ID', 'smartlibrary@upi')
     UPI_PAYEE_NAME = os.getenv('UPI_PAYEE_NAME', 'Smart College Library')
 
+    # Google Gemini AI Integration (Course & Syllabus Book Recommendations)
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
+    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite').strip()
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""
