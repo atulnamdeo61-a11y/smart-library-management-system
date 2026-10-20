@@ -389,6 +389,52 @@ a:hover {
     color: #ffffff !important;
 }
 
+.btn-light {
+    background-color: #1a2333 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
+}
+
+.btn-light:hover {
+    background-color: rgba(99, 102, 241, 0.25) !important;
+    border-color: rgba(129, 140, 248, 0.5) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+.category-pill {
+    background: #141b2d !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+    border-radius: 50px !important;
+    padding: 0.55rem 1.15rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.category-pill:hover {
+    background: rgba(99, 102, 241, 0.22) !important;
+    border-color: rgba(129, 140, 248, 0.55) !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25) !important;
+}
+
+.category-pill i {
+    color: #818cf8 !important;
+    transition: transform 0.2s ease;
+}
+
+.category-pill:hover i {
+    transform: scale(1.15);
+}
+
 .form-control, .form-select {
     background-color: #0f172a !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
